@@ -7,8 +7,5 @@ export function invertObj(obj) {
   if (obj) {
     const reversedEntries = Object.entries(obj).map(([key, value]) => [value, key]);
     return Object.fromEntries(reversedEntries);
-  } else {
-    return undefined;
   }
-
 }
