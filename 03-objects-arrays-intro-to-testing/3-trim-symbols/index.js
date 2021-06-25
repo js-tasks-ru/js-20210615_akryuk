@@ -7,7 +7,7 @@
 export function trimSymbols(string, size) {
   const reducer = (acc, current, index, array) => {
     if (array[index - 1] !== current) {
-      return [...acc, [current]];
+      return [...acc, current];
     } else {
       const accCopy = [...acc];
       const newLastElem = accCopy.pop() + current;
