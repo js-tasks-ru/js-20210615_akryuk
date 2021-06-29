@@ -1,46 +1,18 @@
 export default class ColumnChart {
-  constructor(options) {
-    this.data = options?.data;
-    this.label = options?.label;
-    this.value = options?.value;
-    this.link = options?.link;
+  constructor(options = {}) {
+    const { data, label, value, link, formatHeading } = options;
+    this.data = data;
+    this.label = label;
+    this.value = value;
+    this.link = link;
+    this.formatHeading = formatHeading;
     this.element = document.createElement('div');
-    this.formatHeading = options?.formatHeading || null;
     this.chartHeight = 50;
 
     this.render();
   }
 
-  get chart() {
-    if (!this.data) {
-      return '';
-    } else {
-      const props = this.getColumnProps(this.data);
-      const chartReducer = (acc, current, index) => {
-        const { percent, value } = props[index];
-        return acc + `<div style="--value: ${value}" data-tooltip="${percent}"></div>`;
-      };
-      return this.data.reduce(chartReducer, '');
-    }
-  }
-
-  get title() {
-    const label = `Total ${this.label}`;
-    const link = this.link ? `<a class="column-chart__link" href="${this.link}">View all</a>` : '';
-
-    return `<div class="column-chart__title">${label}${link}</div>`;
-  }
-
-  get header() {
-    return `
-      <div data-element="header" class="column-chart__header">
-        ${this.formatHeading ? this.formatHeading(this.value) : this.value}
-      </div>`;
-  }
-
   render() {
-    const body = `<div data-element="body" class="column-chart__chart">${this.chart}</div>`;
-
     this.element.classList.add('column-chart');
     this.element.style.setProperty('--chart-height', this.chartHeight);
     if (!this.data || !this.data.length) {
@@ -51,7 +23,7 @@ export default class ColumnChart {
       ${this.title}
       <div class="column-chart__container">
         ${this.header}
-        ${body}
+        ${this.chart}
       </div>
     `;
   }
@@ -70,9 +42,41 @@ export default class ColumnChart {
     this.render();
   }
 
-  getColumnProps(data) {
+  get chart() {
+    if (!this.data) {
+      return '';
+    } else {
+      const props = this._getColumnProps(this.data);
+      const chartReducer = (acc, current, index) => {
+        const { percent, value } = props[index];
+        return acc + `<div style="--value: ${value}" data-tooltip="${percent}"></div>`;
+      };
+      return `
+        <div data-element="body" class="column-chart__chart">
+          ${this.data.reduce(chartReducer, '')}
+        </div>
+      `;
+    }
+  }
+
+  get title() {
+    const label = `Total ${this.label}`;
+    const link = this.link ? `<a class="column-chart__link" href="${this.link}">View all</a>` : '';
+
+    return `<div class="column-chart__title">${label}${link}</div>`;
+  }
+
+  get header() {
+    return `
+      <div data-element="header" class="column-chart__header">
+        ${this.formatHeading ? this.formatHeading(this.value) : this.value}
+      </div>
+    `;
+  }
+
+  _getColumnProps(data) {
     const maxValue = Math.max(...data);
-    const scale = 50 / maxValue;
+    const scale = this.chartHeight / maxValue;
 
     return data.map(item => {
       return {
