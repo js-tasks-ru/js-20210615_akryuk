@@ -33,7 +33,7 @@ export default class ColumnChart {
   }
 
   remove() {
-    this.element.parentElement.removeChild(this.element);
+    this.element.remove();
   }
 
   update(data) {
