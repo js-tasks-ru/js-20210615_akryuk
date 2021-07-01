@@ -1,6 +1,7 @@
 export default class SortableTable {
 
   element;
+  subElements = {};
 
   constructor(headerConfig = [], data = []) {
     this.headerConfig = headerConfig;
@@ -15,6 +16,7 @@ export default class SortableTable {
     this.element.setAttribute('data-element', 'productsContainer');
 
     this.element.innerHTML = this.table;
+    this.setSubElements();
   }
 
   sort(fieldValue, orderValue) {
@@ -39,7 +41,16 @@ export default class SortableTable {
     if (this.element) {
       this.element.remove();
     }
+    this.subElements = {};
     this.element = null;
+  }
+
+  setSubElements() {
+    const subs = this.element.querySelectorAll('[data-element]');
+    [...subs].forEach(sub => {
+      const key = sub.dataset.element;
+      this.subElements[key] = sub;
+    });
   }
 
   get table() {
