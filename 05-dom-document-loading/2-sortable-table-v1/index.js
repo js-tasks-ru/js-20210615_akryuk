@@ -2,6 +2,8 @@ export default class SortableTable {
 
   element;
   subElements = {};
+  sortingField = null;
+  sortingOrder = null;
 
   constructor(headerConfig = [], data = []) {
     this.headerConfig = headerConfig;
@@ -20,7 +22,10 @@ export default class SortableTable {
   }
 
   sort(fieldValue, orderValue) {
-    console.log(fieldValue, orderValue);
+    this.sortingField = fieldValue;
+    this.sortingOrder = orderValue;
+    this.subElements['header'].innerHTML = this.tableHeader;
+    this.subElements['body'].innerHTML = this.tableBody;
   }
 
   renderRow(data = {}) {
@@ -43,6 +48,8 @@ export default class SortableTable {
     }
     this.subElements = {};
     this.element = null;
+    this.sortingField = null;
+    this.sortingOrder = null;
   }
 
   setSubElements() {
@@ -56,8 +63,12 @@ export default class SortableTable {
   get table() {
     return `
       <div class="sortable-table">
-        ${this.tableHeader}
-        ${this.tableBody}
+        <div data-element="header" class="sortable-table__header sortable-table__row">
+          ${this.tableHeader}
+        </div>
+        <div data-element="body" class="sortable-table__body">
+          ${this.tableBody}
+        </div>
         ${this.tableLoading}
         ${this.tableEmptyPlaceholder}
       </div>
@@ -66,28 +77,19 @@ export default class SortableTable {
 
   get tableHeader() {
     const cells = this.headerConfig.map((cell) => {
+      const order = cell.id === this.sortingField ? this.sortingOrder : '';
       return `
-        <div class="sortable-table__cell" data-id="${cell.id}" data-sortable="${cell.sortable}" data-order="">
+        <div class="sortable-table__cell" data-id="${cell.id}" data-sortable="${cell.sortable}" data-order="${order}">
           <span>${cell.title}</span>
         </div>
       `;
     });
 
-    return `
-      <div data-element="header" class="sortable-table__header sortable-table__row">
-        ${cells.join('')}
-      </div>
-    `;
+    return cells.join('');
   }
 
   get tableBody() {
-    const rows = this.data.map(row => this.renderRow(row));
-
-    return `
-      <div data-element="body" class="sortable-table__body">
-          ${rows.join('')}
-      </div>
-    `;
+    return this.sortedData.map(row => this.renderRow(row)).join('');
   }
 
   get tableLoading() {
@@ -105,6 +107,31 @@ export default class SortableTable {
         </div>
       </div>
     `;
+  }
+
+  get sortedData() {
+    const modes = {
+      asc: 1,
+      desc: -1
+    };
+
+    const sortType = this.headerConfig.find(cell => cell.id === this.sortingField)?.sortType;
+    const locales = ['ru', 'en'];
+    const options = {caseFirst: 'upper'};
+
+    if (this.sortingField && this.sortingOrder) {
+      return this.data.sort((prev, next) => {
+        if (sortType === 'number') {
+          return (prev[this.sortingField] - next[this.sortingField]) * modes[this.sortingOrder];
+        }
+
+        if (sortType === 'string') {
+          return prev[this.sortingField].localeCompare(next[this.sortingField], locales, options) * modes[this.sortingOrder];
+        }
+      });
+    }
+
+    return this.data;
   }
 
 }
