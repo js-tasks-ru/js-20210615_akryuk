@@ -15,7 +15,7 @@
 
   btn1.addEventListener('click', () => {
     if (!!notification) {
-      notification.remove();
+      notification.destroy();
     }
     notification = new NotificationMessage('Hello World', {
       duration: 2000,

@@ -1,6 +1,6 @@
 export default class NotificationMessage {
   element;
-  constructor(label = '', { duration = 2000, type = ''} = {}) {
+  constructor(label = '', {duration = 2000, type = ''} = {}) {
     this.label = label;
     this.type = type;
     this.duration = duration;
@@ -26,17 +26,18 @@ export default class NotificationMessage {
 
   show(target = document.body) {
     target.append(this.element);
-    setTimeout(() => this.remove(), this.duration);
+    setTimeout(() => this.destroy(), this.duration);
   }
 
   remove() {
-    this.destroy();
-    this.element = null;
-  }
-
-  destroy() {
     if (this.element) {
       this.element.remove();
     }
+  }
+
+  destroy() {
+    this.remove();
+    this.element = null;
+
   }
 }
