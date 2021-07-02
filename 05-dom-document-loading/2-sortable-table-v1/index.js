@@ -78,10 +78,12 @@ export default class SortableTable {
 
   get tableHeader() {
     const cells = this.headerConfig.map((cell) => {
-      const order = cell.id === this.sortingField ? this.sortingOrder : '';
+      const isSorted = cell.id === this.sortingField;
+      const order = isSorted ? this.sortingOrder : '';
       return `
         <div class="sortable-table__cell" data-id="${cell.id}" data-sortable="${cell.sortable}" data-order="${order}">
           <span>${cell.title}</span>
+          ${isSorted ? this.sortArrow : ''}
         </div>
       `;
     });
@@ -146,5 +148,13 @@ export default class SortableTable {
     }
 
     return sorted;
+  }
+
+  get sortArrow() {
+    return `
+      <span data-element="arrow" class="sortable-table__sort-arrow">
+        <span class="sort-arrow"></span>
+      </span>
+    `;
   }
 }
