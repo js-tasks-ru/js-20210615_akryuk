@@ -25,6 +25,9 @@ export default class NotificationMessage {
   }
 
   show(target = document.body) {
+    const existingNotifications = document.querySelectorAll('.notification');
+    [...existingNotifications].forEach(n => n.remove());
+
     target.append(this.element);
     setTimeout(() => this.destroy(), this.duration);
   }
