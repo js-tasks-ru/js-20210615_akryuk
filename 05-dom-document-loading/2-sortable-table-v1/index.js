@@ -7,16 +7,15 @@ export default class SortableTable {
 
   constructor(headerConfig = [], data = []) {
     this.headerConfig = headerConfig;
-    this.data = Array.isArray(data) ? data : data.data;
+    this.data = data.data || data; // Because in test config data argument set as { data } instead of array
 
     this.render();
   }
 
   render() {
     this.element = document.createElement('div');
-    this.element.classList.add('products-list__container');
-    this.element.setAttribute('data-element', 'productsContainer');
-
+    this.element.className = 'products-list__container';
+    this.element.dataset.element = 'productsContainer';
     this.element.innerHTML = this.table;
     this.setSubElements();
   }
@@ -30,9 +29,11 @@ export default class SortableTable {
 
   renderRow(data = {}) {
 
-    const rowCells = this.headerConfig.map((cell) => {
+    const defaultCellTemplate = (data) => `<div class="sortable-table__cell">${data}</div>`;
+
+    const rowCells = this.headerConfig.map(cell => {
       const field = data[cell.id];
-      return cell.template ? cell.template(field) : `<div class="sortable-table__cell">${field}</div>`;
+      return cell.template ? cell.template(field) : defaultCellTemplate(field);
     });
 
     return `
@@ -109,30 +110,41 @@ export default class SortableTable {
     `;
   }
 
-  get sortedData() {
+  get sortedCell() {
+    return this.headerConfig.find(cell => cell.id === this.sortingField);
+  }
+
+  get sortingMode() {
     const modes = {
       asc: 1,
       desc: -1
     };
 
-    const sortType = this.headerConfig.find(cell => cell.id === this.sortingField)?.sortType;
+    return modes[this.sortingOrder];
+  }
+
+  get sortedData() {
     const locales = ['ru', 'en'];
     const options = {caseFirst: 'upper'};
+    const sortType = this.sortedCell?.sortType;
+    const sortable = this.sortedCell?.sortable;
+    const sorted = [...this.data];
 
-    if (this.sortingField && this.sortingOrder) {
-      return this.data.sort((prev, next) => {
+    if (this.sortingField && this.sortingOrder && sortable) {
+      sorted.sort((prev, next) => {
+        const prevSorting = prev[this.sortingField];
+        const nextSorting = next[this.sortingField];
+
         if (sortType === 'number') {
-          return (prev[this.sortingField] - next[this.sortingField]) * modes[this.sortingOrder];
+          return (prevSorting - nextSorting) * this.sortingMode;
         }
 
         if (sortType === 'string') {
-          return prev[this.sortingField].localeCompare(next[this.sortingField], locales, options) * modes[this.sortingOrder];
+          return prevSorting.localeCompare(nextSorting, locales, options) * this.sortingMode;
         }
       });
     }
 
-    return this.data;
+    return sorted;
   }
-
 }
-
