@@ -23,8 +23,8 @@ export default class SortableTable {
   sort(fieldValue, orderValue) {
     this.sortingField = fieldValue;
     this.sortingOrder = orderValue;
-    this.subElements['header'].innerHTML = this.tableHeader;
-    this.subElements['body'].innerHTML = this.tableBody;
+    this.subElements.header.innerHTML = this.tableHeader;
+    this.subElements.body.innerHTML = this.tableBody;
   }
 
   renderRow(data = {}) {
