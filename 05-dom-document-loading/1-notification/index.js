@@ -1,5 +1,7 @@
 export default class NotificationMessage {
   element;
+  timerId;
+  static activeNotification;
   constructor(label = '', {duration = 2000, type = ''} = {}) {
     this.label = label;
     this.type = type;
@@ -25,11 +27,12 @@ export default class NotificationMessage {
   }
 
   show(target = document.body) {
-    const existingNotifications = document.querySelectorAll('.notification');
-    [...existingNotifications].forEach(n => n.remove());
-
+    if (NotificationMessage.activeNotification) {
+      NotificationMessage.activeNotification.destroy();
+    }
     target.append(this.element);
-    setTimeout(() => this.destroy(), this.duration);
+    this.timerId = setTimeout(() => this.destroy(), this.duration);
+    NotificationMessage.activeNotification = this;
   }
 
   remove() {
@@ -41,6 +44,7 @@ export default class NotificationMessage {
   destroy() {
     this.remove();
     this.element = null;
-
+    clearTimeout(this.timerId);
+    NotificationMessage.activeNotification = null;
   }
 }
