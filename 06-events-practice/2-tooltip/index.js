@@ -42,8 +42,7 @@ class Tooltip {
       element.addEventListener('pointerover', (e) => {
         this.render(tooltipText);
         document.body.addEventListener('pointermove', e => this.handlePointerMove(e));
-        e.stopPropagation(); // todo check for another solution
-      });
+      }, true);
 
       element.addEventListener('pointerout', () => {
         this.destroy();
