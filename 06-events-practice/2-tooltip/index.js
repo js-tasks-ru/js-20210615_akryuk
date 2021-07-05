@@ -34,20 +34,21 @@ class Tooltip {
 
   initialize() {
     this.createElement();
-    const tooltipElements = document.querySelectorAll(`[data-tooltip]`);
 
-    [...tooltipElements].forEach(element => {
-      const tooltipText = element.dataset.tooltip;
+    document.addEventListener('pointerover', (e) => {
+      const tooltipEl = e.target.closest('[data-tooltip]');
+      if (tooltipEl) {
+        this.render(tooltipEl.dataset.tooltip);
+        tooltipEl.addEventListener('pointermove', e => this.handlePointerMove(e));
+      }
+    });
 
-      element.addEventListener('pointerover', () => {
-        this.render(tooltipText);
-        document.body.addEventListener('pointermove', e => this.handlePointerMove(e));
-      }, true);
-
-      element.addEventListener('pointerout', () => {
+    document.addEventListener('pointerout', (e) => {
+      const tooltipEl = e.target.closest('[data-tooltip]');
+      if (tooltipEl) {
         this.destroy();
-        document.body.removeEventListener('pointermove', (e) => this.handlePointerMove(e));
-      });
+        tooltipEl.removeEventListener('pointermove', (e) => this.handlePointerMove(e));
+      }
     });
   }
 }
