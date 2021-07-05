@@ -39,7 +39,7 @@ class Tooltip {
     [...tooltipElements].forEach(element => {
       const tooltipText = element.dataset.tooltip;
 
-      element.addEventListener('pointerover', (e) => {
+      element.addEventListener('pointerover', () => {
         this.render(tooltipText);
         document.body.addEventListener('pointermove', e => this.handlePointerMove(e));
       }, true);
