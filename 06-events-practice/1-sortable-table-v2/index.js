@@ -6,7 +6,9 @@ export default class SortableTable {
     <span data-element="arrow" class="sortable-table__sort-arrow">
       <span class="sort-arrow"></span>
     </span>
-  `
+  `;
+
+  onHeaderClick = this.handleHeaderClick.bind(this);
 
   constructor(headerConfig, {
     data = [],
@@ -30,7 +32,7 @@ export default class SortableTable {
     this.element.dataset.element = 'productsContainer';
     this.element.innerHTML = this.table;
     this.setSubElements();
-    this.subElements.header.addEventListener('pointerdown', e => this.handleHeaderClick(e));
+    this.subElements.header.addEventListener('pointerdown', this.onHeaderClick);
   }
 
   sort(fieldValue, orderValue) {
@@ -84,7 +86,7 @@ export default class SortableTable {
 
   destroy() {
     if (this.subElements.header) {
-      this.subElements.header.removeEventListener('pointerdown', e => this.handleHeaderClick(e));
+      this.subElements.header.removeEventListener('pointerdown', this.onHeaderClick);
     }
 
     if (this.element) {
