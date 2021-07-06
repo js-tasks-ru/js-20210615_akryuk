@@ -105,8 +105,8 @@ export default class SortableTable {
     });
   }
 
-  handleHeaderClick(e) {
-    const cell = e.target.closest('.sortable-table__cell');
+  handleHeaderClick(event) {
+    const cell = event.target.closest('.sortable-table__cell');
 
     if (cell && cell.dataset.sortable !== 'false') {
       this.sort(cell.dataset.id, cell.dataset.order === 'desc' ? 'asc' : 'desc');
