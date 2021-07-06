@@ -1,6 +1,7 @@
 class Tooltip {
 
-  static instance
+  static instance;
+  static offset = '12px';
 
   constructor() {
     if (!Tooltip.instance) {
@@ -28,8 +29,8 @@ class Tooltip {
   }
 
   handlePointerMove(event) {
-    this.element.style.left = event.x + 12 + 'px';
-    this.element.style.top = event.y + 12 + 'px';
+    this.element.style.left = event.x + Tooltip.offset;
+    this.element.style.top = event.y + Tooltip.offset;
   }
 
   initialize() {
