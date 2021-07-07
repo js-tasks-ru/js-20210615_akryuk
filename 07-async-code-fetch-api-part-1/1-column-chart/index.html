@@ -21,6 +21,10 @@
     <script type="module">
       import ColumnChart from './index.js';
 
+      const loadOrders = document.getElementById('loadOrders');
+      const start = document.getElementById('start');
+      const end = document.getElementById('end');
+
       const ordersChart = new ColumnChart({
         url: 'api/dashboard/orders',
         range: {
@@ -34,6 +38,8 @@
       loadOrders.addEventListener('click', () => {
         // const start = start.value;
         ordersChart.update(new Date(start.value), new Date(end.value))
+        salesChart.update(new Date(start.value), new Date(end.value))
+        customersChart.update(new Date(start.value), new Date(end.value))
       });
 
       const salesChart = new ColumnChart({
