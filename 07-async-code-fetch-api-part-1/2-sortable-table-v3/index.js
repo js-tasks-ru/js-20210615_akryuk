@@ -14,55 +14,21 @@ export default class SortableTable {
 
   onHeaderClick = this.handleHeaderClick.bind(this);
 
-  constructor(headersConfig, {
-    data = [],
+  constructor(headerConfig, {
+    url = '',
     sorted = {},
-    isSortedLocally = true
+    isSortLocally = true
   } = {}) {
     this.headerConfig = headerConfig;
-    this.data = data.data || data;
+    this.url = url;
     this.sortingField = sorted.id;
     this.sortingOrder = sorted.order;
-    this.isSortedLocally = isSortedLocally;
+    this.isSortLocally = isSortLocally;
 
-    this.render(this.sortingOrder);
-    this.sort(sorted.id, sorted.order);
+    this.render(this.sortingOrder || 'asc');
   }
 
   sortOnClient(id, order) {
-
-  }
-
-  sortOnServer(id, order) {
-
-  }
-
-  render() {
-    this.element = document.createElement('div');
-    this.element.className = 'products-list__container';
-    this.element.dataset.element = 'productsContainer';
-    this.element.innerHTML = this.table;
-    this.setSubElements();
-    this.subElements.header.addEventListener('pointerdown', this.onHeaderClick);
-  }
-
-  sort(fieldValue, orderValue) {
-    this.sortingField = fieldValue;
-    this.sortingOrder = orderValue;
-
-    const sortedRows = this.sortData(fieldValue, orderValue);
-
-    this.updateHeaderAfterSorting(fieldValue, orderValue);
-    this.subElements.body.innerHTML = this.renderTableBody(sortedRows);
-  }
-
-  sortData(fieldValue, orderValue) {
-    if (this.isSortedLocally) {
-      return this.locallySortedData(fieldValue, orderValue);
-    }
-  }
-
-  locallySortedData(field, order) {
     const locales = ['ru', 'en'];
     const options = {caseFirst: 'upper'};
     const sortType = this.sortedCell?.sortType;
@@ -73,10 +39,10 @@ export default class SortableTable {
       desc: -1
     };
 
-    if (field && order && sortable) {
+    if (id && order && sortable) {
       sorted.sort((prev, next) => {
-        const prevField = prev[field];
-        const nextField = next[field];
+        const prevField = prev[id];
+        const nextField = next[id];
 
         switch (sortType) {
         case 'number':
@@ -93,6 +59,56 @@ export default class SortableTable {
     }
 
     return sorted;
+  }
+
+  sortOnServer(id, order) {
+  }
+
+  async render(order) {
+    this.element = document.createElement('div');
+    this.element.className = 'products-list__container';
+    this.element.dataset.element = 'productsContainer';
+    this.element.innerHTML = this.table;
+    this.setSubElements();
+    this.subElements.table.classList.add('sortable-table_loading');
+
+    this.data = await this.fetchData({_start: 0, _end: 30});
+    this.subElements.body.innerHTML = this.renderTableBody(this.data);
+    this.subElements.table.classList.remove('sortable-table_loading');
+
+    this.subElements.header.addEventListener('pointerdown', this.onHeaderClick);
+  }
+
+  fetchData(params = {}) {
+    const url = `${BACKEND_URL}/${this.url}`;
+    const paramsToString = (obj) => {
+      const entries = Object.entries(obj);
+
+      if (entries.length) {
+        return '?' + entries.map(([key, value]) => `${key}=${value}`).join('&');
+      }
+
+      return '';
+    };
+    return fetchJson(url + paramsToString(params));
+  }
+
+  sort(fieldValue, orderValue) {
+    this.sortingField = fieldValue;
+    this.sortingOrder = orderValue;
+
+    const sortedRows = this.sortData(fieldValue, orderValue);
+
+    this.updateHeaderAfterSorting(fieldValue, orderValue);
+    this.subElements.body.innerHTML = this.renderTableBody(sortedRows);
+  }
+
+  sortData(fieldValue, orderValue) {
+    if (this.isSortLocally) {
+      return this.sortOnClient(fieldValue, orderValue);
+    }
+
+    return this.sortOnServer(fieldValue, orderValue);
   }
 
   destroy() {
@@ -127,13 +143,15 @@ export default class SortableTable {
   }
 
   updateHeaderAfterSorting(fieldValue, orderValue) {
-    const allColumns = this.element.querySelectorAll('.sortable-table__cell[data-id]');
-    const currentColumn = this.element.querySelector(`.sortable-table__cell[data-id="${fieldValue}"]`);
-    allColumns.forEach(column => {
-      column.dataset.order = '';
-    });
+    if (fieldValue && orderValue) {
+      const allColumns = this.element.querySelectorAll('.sortable-table__cell[data-id]');
+      const currentColumn = this.element.querySelector(`.sortable-table__cell[data-id="${fieldValue}"]`);
+      allColumns.forEach(column => {
+        column.dataset.order = '';
+      });
 
-    currentColumn.dataset.order = orderValue;
+      currentColumn.dataset.order = orderValue;
+    }
   }
 
   renderTableBody(data = []) {
@@ -158,7 +176,7 @@ export default class SortableTable {
 
   get table() {
     return `
-      <div class="sortable-table">
+      <div class="sortable-table" data-element="table">
         <div data-element="header" class="sortable-table__header sortable-table__row">
           ${this.tableHeader}
         </div>
