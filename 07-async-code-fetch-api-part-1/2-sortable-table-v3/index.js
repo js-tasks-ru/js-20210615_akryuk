@@ -5,30 +5,48 @@ const BACKEND_URL = 'https://course-js.javascript.ru';
 export default class SortableTable {
 
   element;
+  pageSize = 30;
+  data = [];
   subElements = {};
+  isLoading = false;
   sortArrow = `
     <span data-element="arrow" class="sortable-table__sort-arrow">
       <span class="sort-arrow"></span>
     </span>
   `;
 
-  onHeaderClick = this.handleHeaderClick.bind(this);
+  onHeaderClick = (event) => {
+    const cell = event.target.closest('.sortable-table__cell');
+    if (cell && cell.dataset.sortable !== 'false') {
+      this.sort(cell.dataset.id, cell.dataset.order === 'desc' ? 'asc' : 'desc');
+    }
+  }
+
+  onScroll = () => {
+    const { innerHeight, scrollY } = window;
+    const { offsetHeight } = document.body;
+    if ((innerHeight + scrollY) >= offsetHeight) {
+      this.loadMore();
+    }
+  }
 
   constructor(headerConfig, {
     url = '',
     sorted = {},
-    isSortLocally = true
+    isSortLocally = false
   } = {}) {
     this.headerConfig = headerConfig;
     this.url = url;
     this.sortingField = sorted.id;
-    this.sortingOrder = sorted.order;
+    this.sortingOrder = sorted.order || 'asc';
     this.isSortLocally = isSortLocally;
 
-    this.render(this.sortingOrder || 'asc');
+    this.render();
   }
 
   sortOnClient(id, order) {
+    this.sortingField = id;
+    this.sortingOrder = order;
     const locales = ['ru', 'en'];
     const options = {caseFirst: 'upper'};
     const sortType = this.sortedCell?.sortType;
@@ -61,60 +79,63 @@ export default class SortableTable {
     return sorted;
   }
 
-  sortOnServer(id, order) {
+  async sortOnServer(id, order) {
+    this.sortingField = id;
+    this.sortingOrder = order;
+    this.subElements.table.classList.add('sortable-table_loading');
+    this.data = [];
+    this.onLoadStart();
+    return await fetchJson(this.loadUrl);
   }
 
-  async render(order) {
+  async render() {
     this.element = document.createElement('div');
     this.element.className = 'products-list__container';
     this.element.dataset.element = 'productsContainer';
     this.element.innerHTML = this.table;
     this.setSubElements();
-    this.subElements.table.classList.add('sortable-table_loading');
+    this.initEventListeners();
 
-    this.data = await this.fetchData({_start: 0, _end: 30});
-    this.subElements.body.innerHTML = this.renderTableBody(this.data);
-    this.subElements.table.classList.remove('sortable-table_loading');
-
-    this.subElements.header.addEventListener('pointerdown', this.onHeaderClick);
+    this.onLoadStart();
+    const data = await fetchJson(this.loadUrl);
+    this.onLoadCompleted(data);
   }
 
-  fetchData(params = {}) {
-    const url = `${BACKEND_URL}/${this.url}`;
-    const paramsToString = (obj) => {
-      const entries = Object.entries(obj);
+  onLoadCompleted(data) {
+    this.data = [...this.data, ...data];
 
-      if (entries.length) {
-        return '?' + entries.map(([key, value]) => `${key}=${value}`).join('&');
-      }
-
-      return '';
-    };
-    return fetchJson(url + paramsToString(params));
-  }
-
-  sort(fieldValue, orderValue) {
-    this.sortingField = fieldValue;
-    this.sortingOrder = orderValue;
-
-    const sortedRows = this.sortData(fieldValue, orderValue);
-
-    this.updateHeaderAfterSorting(fieldValue, orderValue);
-    this.subElements.body.innerHTML = this.renderTableBody(sortedRows);
-  }
-
-  sortData(fieldValue, orderValue) {
-    if (this.isSortLocally) {
-      return this.sortOnClient(fieldValue, orderValue);
+    if (!this.data.length) {
+      this.subElements.table.classList.remove('sortable-table_loading');
+      this.subElements.table.classList.add('sortable-table_empty');
     }
 
-    return this.sortOnServer(fieldValue, orderValue);
+    this.subElements.body.innerHTML = this.renderTableBody(this.data);
+    this.subElements.table.classList.remove('sortable-table_loading');
+    this.isLoading = false;
+  }
+
+  onLoadStart() {
+    this.isLoading = true;
+    this.subElements.table.classList.add('sortable-table_loading');
+  }
+
+  async loadMore() {
+    if (!this.isLoading) {
+      this.onLoadStart();
+      const data = await fetchJson(this.loadUrl);
+      this.onLoadCompleted(data);
+    }
+  }
+
+  async sort(fieldValue, orderValue) {
+    this.data = this.isSortLocally ? this.sortOnClient(fieldValue, orderValue) : await this.sortOnServer(fieldValue, orderValue);
+    this.updateHeaderAfterSorting(fieldValue, orderValue);
+    this.subElements.body.innerHTML = this.renderTableBody(this.data);
+    this.subElements.table.classList.remove('sortable-table_loading');
   }
 
   destroy() {
-    if (this.subElements.header) {
-      this.subElements.header.removeEventListener('pointerdown', this.onHeaderClick);
-    }
+    this.clearEventListeners();
 
     if (this.element) {
       this.element.remove();
@@ -124,6 +145,7 @@ export default class SortableTable {
     this.element = null;
     this.sortingField = null;
     this.sortingOrder = null;
+    this.isLoading = false;
   }
 
   setSubElements() {
@@ -132,14 +154,6 @@ export default class SortableTable {
       const key = sub.dataset.element;
       this.subElements[key] = sub;
     });
-  }
-
-  handleHeaderClick(event) {
-    const cell = event.target.closest('.sortable-table__cell');
-
-    if (cell && cell.dataset.sortable !== 'false') {
-      this.sort(cell.dataset.id, cell.dataset.order === 'desc' ? 'asc' : 'desc');
-    }
   }
 
   updateHeaderAfterSorting(fieldValue, orderValue) {
@@ -172,6 +186,18 @@ export default class SortableTable {
         ${rowCells.join('')}
       </a>
     `;
+  }
+
+  initEventListeners() {
+    this.subElements.header.addEventListener('pointerdown', this.onHeaderClick);
+    document.addEventListener('scroll', this.onScroll);
+  }
+
+  clearEventListeners() {
+    if (this.subElements.header) {
+      this.subElements.header.removeEventListener('pointerdown', this.onHeaderClick);
+    }
+    document.removeEventListener('scroll', this.onScroll);
   }
 
   get table() {
@@ -223,5 +249,21 @@ export default class SortableTable {
 
   get sortedCell() {
     return this.headerConfig.find(cell => cell.id === this.sortingField);
+  }
+
+  get loadUrl() {
+
+    const params = {
+      _start: this.data.length,
+      _end: this.pageSize + this.data.length,
+      _order: this.sortingOrder,
+      _sort: this.sortingField
+    };
+
+    const entries = Object.entries(params).filter(([key, value]) => value !== undefined);
+    const urlParams = entries.length ? '?' + entries.map(([key, value]) => `${key}=${value}`).join('&') : '';
+
+    return `${BACKEND_URL}/${this.url}${urlParams}`;
+
   }
 }
