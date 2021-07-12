@@ -17,10 +17,9 @@ export default class ProductForm {
     this.element = document.createElement('div');
     this.element.className = 'product-form';
 
+    // todo: Replace with new URL() constructor
     const productData = await fetchJson(`${BACKEND_URL}/api/rest/products?id=${this.productId}`);
     const categories = await fetchJson(`${BACKEND_URL}/api/rest/categories?_sort=weight&_refs=subcategory`);
-
-    console.log(productData);
 
     this.element.innerHTML = `
       <form data-element="productForm" class="form-grid">
@@ -36,17 +35,9 @@ export default class ProductForm {
         </div>
         <div class="form-group form-group__wide" data-element="sortable-list-container">
           <label class="form-label">Фото</label>
-          <div data-element="imageListContainer"><ul class="sortable-list"><li class="products-edit__imagelist-item sortable-list__item" style="">
-            <input type="hidden" name="url" value="https://i.imgur.com/MWorX2R.jpg">
-            <input type="hidden" name="source" value="75462242_3746019958756848_838491213769211904_n.jpg">
-            <span>
-          <img src="icon-grab.svg" data-grab-handle="" alt="grab">
-          <img class="sortable-table__cell-img" alt="Image" src="https://i.imgur.com/MWorX2R.jpg">
-          <span>75462242_3746019958756848_838491213769211904_n.jpg</span>
-        </span>
-            <button type="button">
-              <img src="icon-trash.svg" data-delete-handle="" alt="delete">
-            </button></li></ul></div>
+          <div data-element="imageListContainer">
+            ${this.renderImagesList(productData[0].images)}
+          </div>
           <button type="button" name="uploadImage" class="button-primary-outline"><span>Загрузить</span></button>
         </div>
         <div class="form-group form-group__half_left">
@@ -82,6 +73,19 @@ export default class ProductForm {
       </form>
     `;
     this.setSubElements();
+
+    const { productForm } = this.subElements;
+    const { elements } = productForm;
+
+    const {title, description, subcategory, price, discount, quantity, status} = productData[0];
+
+    elements.title.value = title;
+    elements.description.value = description;
+    elements.subcategory.value = subcategory;
+    elements.price.value = price;
+    elements.discount.value = discount;
+    elements.quantity.value = quantity;
+    elements.status.value = status;
   }
 
   renderCategorySelect(categoriesList = []) {
@@ -101,6 +105,30 @@ export default class ProductForm {
       <select class="form-control" name="subcategory">
         ${options}
       </select>
+    `;
+  }
+
+  renderImage(data) {
+    return `
+      <li class="products-edit__imagelist-item sortable-list__item" style="">
+        <input type="hidden" name="url" value="${data.url}">
+        <input type="hidden" name="source" value="${data.source}">
+        <span>
+          <img src="icon-grab.svg" data-grab-handle="" alt="grab">
+          <img class="sortable-table__cell-img" alt="Image" src="${data.url}">
+          <span>${data.source}</span>
+        </span>
+        <button type="button">
+          <img src="icon-trash.svg" data-delete-handle="" alt="delete">
+        </button>
+      </li>`;
+  }
+
+  renderImagesList(images = []) {
+    return `
+      <ul class="sortable-list">
+        ${images.map(img => this.renderImage(img)).join('')}
+      </ul>
     `;
   }
 
