@@ -8,6 +8,18 @@ export default class ProductForm {
 
   subElements = {}
 
+  deleteImage = (event) => {
+    const item = event.currentTarget.closest('.products-edit__imagelist-item');
+    if (item) {
+      item.remove();
+    }
+  }
+
+  handleSubmit = (event) => {
+    event.preventDefault();
+    this.save();
+  }
+
   constructor (productId) {
     this.productId = productId;
 
@@ -22,19 +34,23 @@ export default class ProductForm {
     const categoriesRequest = fetchJson(`${BACKEND_URL}/api/rest/categories?_sort=weight&_refs=subcategory`);
 
     Promise.all([categoriesRequest, productRequest])
-      .then(([productData, categories]) => {
+      .then(([categories, productData]) => {
         this.renderElementContent(productData[0], categories);
         this.setSubElements();
-        const { productForm } = this.subElements;
-        productForm.addEventListener('submit', (event) => {
-          event.preventDefault();
-          this.save();
-        });
         this.setFormValues(productData[0]);
+        this.initEventListeners();
       })
       .catch(console.error);
 
     return this.element;
+  }
+
+  initEventListeners() {
+    const { productForm, imageListContainer } = this.subElements;
+    const deleteButtons = imageListContainer.querySelectorAll('[data-delete-handle]');
+
+    productForm.addEventListener('submit', this.handleSubmit);
+    deleteButtons.forEach(btn => btn.addEventListener('click', this.deleteImage));
   }
 
   renderCategorySelect(categoriesList = []) {
@@ -49,11 +65,6 @@ export default class ProductForm {
         );
       }
     });
-    // const list = categoriesList.flatMap(
-    //   category => category.subcategories.map(
-    //     subcategory => ({id: subcategory.id, title: subcategory.title, rootTitle: category.title})
-    //   )
-    // );
 
     const options = list.map(
       item => `<option value="${item.id}">${item.rootTitle} &gt; ${item.title}</option>`
@@ -143,7 +154,7 @@ export default class ProductForm {
           <img class="sortable-table__cell-img" alt="Image" src="${data.url}">
           <span>${data.source}</span>
         </span>
-        <button type="button">
+        <button type="button" class="products-edit__remove-btn">
           <img src="icon-trash.svg" data-delete-handle="" alt="delete">
         </button>
       </li>`;
