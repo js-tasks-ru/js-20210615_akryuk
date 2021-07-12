@@ -38,7 +38,7 @@ export default class SortableTable {
     this.headerConfig = headerConfig;
     this.url = url;
     this.sortingField = sorted.id;
-    this.sortingOrder = sorted.order || 'asc';
+    this.sortingOrder = sorted.order;
     this.isSortLocally = isSortLocally;
 
     this.render();
@@ -82,10 +82,20 @@ export default class SortableTable {
   async sortOnServer(id, order) {
     this.sortingField = id;
     this.sortingOrder = order;
-    this.subElements.table.classList.add('sortable-table_loading');
     this.data = [];
     this.onLoadStart();
     return await fetchJson(this.loadUrl);
+  }
+
+  async sort(fieldValue, orderValue) {
+    try {
+      this.data = this.isSortLocally ? this.sortOnClient(fieldValue, orderValue) : await this.sortOnServer(fieldValue, orderValue);
+      this.updateHeaderAfterSorting(fieldValue, orderValue);
+      this.subElements.body.innerHTML = this.renderTableBody(this.data);
+      this.subElements.table.classList.remove('sortable-table_loading');
+    } catch (error) {
+      console.error(error);
+    }
   }
 
   async render() {
@@ -96,9 +106,14 @@ export default class SortableTable {
     this.setSubElements();
     this.initEventListeners();
 
-    this.onLoadStart();
-    const data = await fetchJson(this.loadUrl);
-    this.onLoadCompleted(data);
+    try {
+      this.onLoadStart();
+      const data = await fetchJson(this.loadUrl);
+      this.onLoadCompleted(data);
+    } catch (error) {
+      console
+        .error(error);
+    }
   }
 
   onLoadCompleted(data) {
@@ -121,17 +136,14 @@ export default class SortableTable {
 
   async loadMore() {
     if (!this.isLoading) {
-      this.onLoadStart();
-      const data = await fetchJson(this.loadUrl);
-      this.onLoadCompleted(data);
+      try {
+        this.onLoadStart();
+        const data = await fetchJson(this.loadUrl);
+        this.onLoadCompleted(data);
+      } catch (error) {
+        console.error(error);
+      }
     }
-  }
-
-  async sort(fieldValue, orderValue) {
-    this.data = this.isSortLocally ? this.sortOnClient(fieldValue, orderValue) : await this.sortOnServer(fieldValue, orderValue);
-    this.updateHeaderAfterSorting(fieldValue, orderValue);
-    this.subElements.body.innerHTML = this.renderTableBody(this.data);
-    this.subElements.table.classList.remove('sortable-table_loading');
   }
 
   destroy() {
