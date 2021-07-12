@@ -1,4 +1,3 @@
-import escapeHtml from './utils/escape-html.js';
 import fetchJson from './utils/fetch-json.js';
 
 const IMGUR_CLIENT_ID = '28aaa2e823b03b1';
@@ -7,6 +6,17 @@ const BACKEND_URL = 'https://course-js.javascript.ru';
 export default class ProductForm {
 
   subElements = {}
+
+  product = {
+    title: '',
+    description: '',
+    quantity: 1,
+    subcategory: '',
+    status: 1,
+    price: 100,
+    discount: 0,
+    images: []
+  }
 
   deleteImage = (event) => {
     const item = event.currentTarget.closest('.products-edit__imagelist-item');
@@ -61,7 +71,11 @@ export default class ProductForm {
     this.element.className = 'product-form';
 
     const categoriesRequest = fetchJson(`${BACKEND_URL}/api/rest/categories?_sort=weight&_refs=subcategory`);
-    const productRequest = fetchJson(`${BACKEND_URL}/api/rest/products?id=${this.productId}`);
+    const productRequest =
+      !!this.productId ?
+        fetchJson(`${BACKEND_URL}/api/rest/products?id=${this.productId}`)
+        :
+        Promise.resolve([this.product]);
 
     Promise.all([categoriesRequest, productRequest])
       .then(([categories, productData]) => {
@@ -108,7 +122,7 @@ export default class ProductForm {
     `;
   }
 
-  renderElementContent(product, categories) {
+  renderElementContent(product = {}, categories = []) {
     this.element.innerHTML = `
       <form data-element="productForm" class="form-grid">
         <div class="form-group form-group__half_left">
@@ -240,10 +254,17 @@ export default class ProductForm {
   }
 
   async save() {
-    const body = {id: this.productId, ...this.formValues};
-    fetch(`${BACKEND_URL}/api/rest/products`, {method: 'PATCH', body: JSON.stringify(body), headers: {"Content-Type": "application/json"}})
+    const body = {...this.formValues};
+    if (this.productId) {
+      body.id = this.productId;
+    }
+
+    const method = this.productId ? 'PATCH' : 'PUT';
+    const eventName = this.productId ? 'product-updated' : 'product-created';
+
+    fetch(`${BACKEND_URL}/api/rest/products`, {method, body: JSON.stringify(body), headers: {"Content-Type": "application/json"}})
       .then(() => {
-        this.element.dispatchEvent(new CustomEvent('product-updated', {bubbles: true}));
+        this.element.dispatchEvent(new CustomEvent(eventName, {bubbles: true}));
       })
       .catch(console.error);
   }
