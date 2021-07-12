@@ -20,6 +20,36 @@ export default class ProductForm {
     this.save();
   }
 
+  handleImageUpload = (event) => {
+    event.preventDefault();
+    const tempFileUpload = document.createElement('input');
+    document.body.append(tempFileUpload);
+    tempFileUpload.type = 'file';
+    tempFileUpload.accept = 'image/*';
+    tempFileUpload.hidden = true;
+    tempFileUpload.click();
+
+    tempFileUpload.onchange = e => {
+      e.preventDefault();
+      if (tempFileUpload.files[0]) {
+        const file = tempFileUpload.files[0];
+        const data = new FormData();
+        data.append('image', file);
+
+        const { uploadImage } = this.subElements;
+        uploadImage.classList.add('is-loading');
+
+        this.imageUploadRequest(data)
+          .then(resp => console.log(resp))
+          .catch(console.error)
+          .finally(() => {
+            tempFileUpload.remove();
+            uploadImage.classList.remove('is-loading');
+          });
+      }
+    };
+  }
+
   constructor (productId) {
     this.productId = productId;
 
@@ -46,11 +76,12 @@ export default class ProductForm {
   }
 
   initEventListeners() {
-    const { productForm, imageListContainer } = this.subElements;
+    const { productForm, imageListContainer, uploadImage } = this.subElements;
     const deleteButtons = imageListContainer.querySelectorAll('[data-delete-handle]');
 
     productForm.addEventListener('submit', this.handleSubmit);
     deleteButtons.forEach(btn => btn.addEventListener('click', this.deleteImage));
+    uploadImage.addEventListener('click', this.handleImageUpload);
   }
 
   renderCategorySelect(categoriesList = []) {
@@ -95,7 +126,7 @@ export default class ProductForm {
           <div data-element="imageListContainer">
             ${this.renderImagesList(product.images)}
           </div>
-          <button type="button" name="uploadImage" class="button-primary-outline"><span>Загрузить</span></button>
+          <button type="button" name="uploadImage" data-element="uploadImage" class="button-primary-outline"><span>Загрузить</span></button>
         </div>
         <div class="form-group form-group__half_left">
           <label class="form-label">Категория</label>
@@ -128,6 +159,7 @@ export default class ProductForm {
           </button>
         </div>
       </form>
+      <form data-element="imageUploadForm"></form>
     `;
   }
 
@@ -214,5 +246,15 @@ export default class ProductForm {
         this.element.dispatchEvent(new CustomEvent('product-updated', {bubbles: true}));
       })
       .catch(console.error);
+  }
+
+  async imageUploadRequest(formData) {
+    const params = {
+      method: 'POST',
+      headers: {authorization: `Client-ID ${IMGUR_CLIENT_ID}`},
+      body: formData
+    };
+
+    return fetchJson('https://api.imgur.com/3/image', params);
   }
 }
