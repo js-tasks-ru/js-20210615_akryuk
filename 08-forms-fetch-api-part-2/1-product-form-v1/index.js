@@ -60,8 +60,8 @@ export default class ProductForm {
     this.element = document.createElement('div');
     this.element.className = 'product-form';
 
-    const productRequest = fetchJson(`${BACKEND_URL}/api/rest/products?id=${this.productId}`);
     const categoriesRequest = fetchJson(`${BACKEND_URL}/api/rest/categories?_sort=weight&_refs=subcategory`);
+    const productRequest = fetchJson(`${BACKEND_URL}/api/rest/products?id=${this.productId}`);
 
     Promise.all([categoriesRequest, productRequest])
       .then(([categories, productData]) => {
