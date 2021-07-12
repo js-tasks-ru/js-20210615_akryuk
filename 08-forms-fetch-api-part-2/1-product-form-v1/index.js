@@ -272,10 +272,19 @@ export default class ProductForm {
   async imageUploadRequest(formData) {
     const params = {
       method: 'POST',
-      headers: {authorization: `Client-ID ${IMGUR_CLIENT_ID}`},
-      body: formData
+      headers: {Authorization: `Client-ID ${IMGUR_CLIENT_ID}`},
+      body: formData,
+      referrer: ''
     };
 
     return fetchJson('https://api.imgur.com/3/image', params);
+    // return fetch('https://api.imgur.com/3/image', {
+    //   method: 'POST',
+    //   headers: {
+    //     Authorization: `Client-ID ${IMGUR_CLIENT_ID}`
+    //   },
+    //   body: formData,
+    //   referrer: ''
+    // });
   }
 }
