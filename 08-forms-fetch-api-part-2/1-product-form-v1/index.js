@@ -10,6 +10,7 @@ export default class ProductForm {
 
   constructor (productId) {
     this.productId = productId;
+
     this.render();
   }
 
@@ -20,7 +21,7 @@ export default class ProductForm {
     const productRequest = fetchJson(`${BACKEND_URL}/api/rest/products?id=${this.productId}`);
     const categoriesRequest = fetchJson(`${BACKEND_URL}/api/rest/categories?_sort=weight&_refs=subcategory`);
 
-    Promise.all([productRequest, categoriesRequest])
+    Promise.all([categoriesRequest, productRequest])
       .then(([productData, categories]) => {
         this.renderElementContent(productData[0], categories);
         this.setSubElements();
@@ -32,23 +33,34 @@ export default class ProductForm {
         this.setFormValues(productData[0]);
       })
       .catch(console.error);
+
+    return this.element;
   }
 
   renderCategorySelect(categoriesList = []) {
 
     // Extracting subcategories from each category to flat array
-    const list = categoriesList.flatMap(
-      category => category.subcategories.map(
-        subcategory => ({id: subcategory.id, title: subcategory.title, rootTitle: category.title})
-      )
-    );
+    const list = [];
+
+    categoriesList.forEach(category => {
+      if (category.subcategories) {
+        category.subcategories.forEach(
+          subcategory => list.push({id: subcategory.id, title: subcategory.title, rootTitle: category.title})
+        );
+      }
+    });
+    // const list = categoriesList.flatMap(
+    //   category => category.subcategories.map(
+    //     subcategory => ({id: subcategory.id, title: subcategory.title, rootTitle: category.title})
+    //   )
+    // );
 
     const options = list.map(
       item => `<option value="${item.id}">${item.rootTitle} &gt; ${item.title}</option>`
     ).join('');
 
     return `
-      <select class="form-control" name="subcategory">
+      <select class="form-control" name="subcategory" id="subcategory">
         ${options}
       </select>
     `;
@@ -60,12 +72,12 @@ export default class ProductForm {
         <div class="form-group form-group__half_left">
           <fieldset>
             <label class="form-label">Название товара</label>
-            <input required="" type="text" name="title" class="form-control" placeholder="Название товара">
+            <input required="" type="text" name="title" id="title" class="form-control" placeholder="Название товара">
           </fieldset>
         </div>
         <div class="form-group form-group__wide">
           <label class="form-label">Описание</label>
-          <textarea required="" class="form-control" name="description" data-element="productDescription" placeholder="Описание товара"></textarea>
+          <textarea required="" class="form-control" id="description" name="description" data-element="productDescription" placeholder="Описание товара"></textarea>
         </div>
         <div class="form-group form-group__wide" data-element="sortable-list-container">
           <label class="form-label">Фото</label>
@@ -81,20 +93,20 @@ export default class ProductForm {
         <div class="form-group form-group__half_left form-group__two-col">
           <fieldset>
             <label class="form-label">Цена ($)</label>
-            <input required="" type="number" name="price" class="form-control" placeholder="100">
+            <input required="" type="number" name="price" id="price" class="form-control" placeholder="100">
           </fieldset>
           <fieldset>
             <label class="form-label">Скидка ($)</label>
-            <input required="" type="number" name="discount" class="form-control" placeholder="0">
+            <input required="" type="number" name="discount" id="discount" class="form-control" placeholder="0">
           </fieldset>
         </div>
         <div class="form-group form-group__part-half">
           <label class="form-label">Количество</label>
-          <input required="" type="number" class="form-control" name="quantity" placeholder="1">
+          <input required="" type="number" class="form-control" name="quantity" id="quantity" placeholder="1">
         </div>
         <div class="form-group form-group__part-half">
           <label class="form-label">Статус</label>
-          <select class="form-control" name="status">
+          <select class="form-control" name="status" id="status">
             <option value="1">Активен</option>
             <option value="0">Неактивен</option>
           </select>
