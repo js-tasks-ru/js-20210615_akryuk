@@ -59,6 +59,9 @@ export default class RangePicker {
       month: this.from.getMonth()
     };
 
+    this.defaultsFrom = from;
+    this.defaultsTo = to;
+
     this.render();
   }
 
@@ -195,6 +198,10 @@ export default class RangePicker {
     const { selector } = this.subElements;
     this.element.classList.remove('rangepicker_open');
     selector.innerHTML = '';
+    if (!this.to) {
+      this.from = this.defaultsFrom;
+      this.to = this.defaultsTo;
+    }
   }
 
   initEventListeners() {
