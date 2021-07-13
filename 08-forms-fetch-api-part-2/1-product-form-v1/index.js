@@ -104,6 +104,15 @@ export default class ProductForm {
     uploadImage.addEventListener('click', this.handleImageUpload);
   }
 
+  removeEventListeners() {
+    const { productForm, imageListContainer, uploadImage } = this.subElements;
+    const deleteButtons = imageListContainer.querySelectorAll('[data-delete-handle]');
+
+    productForm.removeEventListener('submit', this.handleSubmit);
+    deleteButtons.forEach(btn => btn.removeEventListener('click', this.deleteImage));
+    uploadImage.removeEventListener('click', this.handleImageUpload);
+  }
+
   renderCategorySelect(categoriesList = []) {
 
     // Extracting subcategories from each category to flat array
@@ -235,6 +244,7 @@ export default class ProductForm {
   }
 
   destroy() {
+    this.removeEventListeners();
     this.remove();
     this.subElements = {};
   }
