@@ -58,6 +58,24 @@ export default class RangePicker {
     input.addEventListener('click', this.toggle);
   }
 
+  removeEventListeners() {
+    document.removeEventListener('click', this.clickOutside);
+    const {input} = this.subElements;
+    input.removeEventListener('click', this.toggle);
+  }
+
+  remove() {
+    if (this.element) {
+      this.element.remove();
+    }
+  }
+
+  destroy() {
+    this.removeEventListeners();
+    this.subElements = {};
+    this.remove();
+  }
+
   renderSelector() {
     return `
       <div class="rangepicker__selector" data-element="selector">
