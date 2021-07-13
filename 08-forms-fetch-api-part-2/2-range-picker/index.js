@@ -2,8 +2,7 @@ export default class RangePicker {
   subElements = {};
 
   toggle = () => {
-    const opened = this.element.classList.contains('rangepicker_open');
-    if (opened) {
+    if (this.isOpen) {
       this.close();
     } else {
       this.open();
@@ -21,18 +20,16 @@ export default class RangePicker {
     const dayBtn = e.target.closest('.rangepicker__cell');
     if (dayBtn) {
 
-      const hasTo = !!document.querySelectorAll('.rangepicker__selected-to').length;
-
-      if (hasTo) {
+      if (this.to) {
         this.from = new Date(dayBtn.dataset.value);
         this.to = null;
-        this.updateMonthsMarkup();
+        this.highlightCells();
       } else {
         this.to = new Date(dayBtn.dataset.value);
         const { from, to } = this.subElements;
         from.innerHTML = this.formattedFrom;
         to.innerHTML = this.formattedTo;
-        this.updateMonthsMarkup();
+        this.highlightCells();
         this.close();
       }
     }
@@ -132,26 +129,11 @@ export default class RangePicker {
       });
     }
 
-    const renderDay = ({day, value, weekday, date}) => {
-
-      const classes = ['rangepicker__cell'];
-
-      if (date > this.from && date < this.to && this.to) {
-        classes.push('rangepicker__selected-between');
-      }
-
-      if (date.valueOf() === this.from.valueOf()) {
-        classes.push('rangepicker__selected-from');
-      }
-
-      if (this.to && date.valueOf() === this.to.valueOf()) {
-        classes.push('rangepicker__selected-to');
-      }
-
+    const renderDay = ({day, value, weekday}) => {
       return `
         <button
           type="button"
-          class="${classes.join(' ')}"
+          class="rangepicker__cell"
           style="--start-from: ${weekday}"
           data-value="${value}"
           >
@@ -179,6 +161,32 @@ export default class RangePicker {
     `;
   }
 
+  highlightCells() {
+    const { selector } = this.subElements;
+    const classes = {
+      from: 'rangepicker__selected-from',
+      to: 'rangepicker__selected-to',
+      between: 'rangepicker__selected-between'
+    };
+    const cells = selector.querySelectorAll('.rangepicker__cell');
+
+    [...cells].forEach(cell => {
+      cell.className = 'rangepicker__cell';
+      const date = new Date(cell.dataset.value);
+      if (date.valueOf() === this.from.valueOf()) {
+        cell.classList.add(classes.from);
+      }
+
+      if (this.to && date.valueOf() === this.to.valueOf()) {
+        cell.classList.add(classes.to);
+      }
+
+      if (date > this.from && date < this.to && this.to) {
+        cell.classList.add(classes.between);
+      }
+    });
+  }
+
   setSubElements() {
     const subs = this.element.querySelectorAll('[data-element]');
     [...subs].forEach(sub => {
@@ -192,6 +200,7 @@ export default class RangePicker {
     this.element.classList.add('rangepicker_open');
     selector.innerHTML = this.renderSelector();
     this.setSubElements();
+    this.highlightCells();
   }
 
   close() {
@@ -282,9 +291,14 @@ export default class RangePicker {
     return this.formatDate(this.from);
   }
 
+  get isOpen() {
+    return this.element.classList.contains('rangepicker_open');
+  }
+
   updateMonthsMarkup() {
     const {monthStart, monthEnd} = this.subElements;
     monthStart.innerHTML = this.renderMonth(this.visibleMonth);
     monthEnd.innerHTML = this.renderMonth(this.nextMonth);
+    this.highlightCells();
   }
 }
