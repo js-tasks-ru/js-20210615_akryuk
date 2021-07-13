@@ -1,5 +1,6 @@
 export default class RangePicker {
   subElements = {}
+  mode = 'from';
 
   toggle = () => {
     this.element.classList.toggle('rangepicker_open');
@@ -12,20 +13,31 @@ export default class RangePicker {
     }
   }
 
-  increaseMonth = () => {
-    const {monthStart, monthEnd} = this.subElements;
-    this.visibleMonth = this.nextMonth;
+  handleDayClick = (e) => {
+    const dayBtn = e.target.closest('.rangepicker__cell');
+    if (dayBtn) {
+      if (this.mode === 'from') {
+        this.setFromDate(new Date(dayBtn.dataset.value));
+        this.mode = 'to';
+        return;
+      }
 
-    monthStart.innerHTML = this.renderMonth(this.visibleMonth);
-    monthEnd.innerHTML = this.renderMonth(this.nextMonth);
+      if (this.mode === 'to') {
+        this.setToDate(new Date(dayBtn.dataset.value));
+        this.mode = 'from';
+        this.close();
+      }
+    }
+  }
+
+  increaseMonth = () => {
+    this.visibleMonth = this.nextMonth;
+    this.updateMonthsMarkup();
   }
 
   decreaseMonth = () => {
-    const {monthStart, monthEnd} = this.subElements;
     this.visibleMonth = this.prevMonth;
-
-    monthStart.innerHTML = this.renderMonth(this.visibleMonth);
-    monthEnd.innerHTML = this.renderMonth(this.nextMonth);
+    this.updateMonthsMarkup();
   }
 
   constructor({ from = new Date(), to = new Date()}) {
@@ -79,18 +91,18 @@ export default class RangePicker {
 
   renderMonth({month, year}) {
     const months = [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December'
+      'январь',
+      'февраль',
+      'март',
+      'апрель',
+      'май',
+      'июнь',
+      'июль',
+      'август',
+      'сентябрь',
+      'октябрь',
+      'ноябрь',
+      'декабрь'
     ];
 
     const daysInMonth = this.daysInMonth(month + 1, year);
@@ -104,14 +116,30 @@ export default class RangePicker {
         day: i,
         value: date.toISOString(),
         weekday: date.getDay(),
+        date
       });
     }
 
-    const renderDay = ({day, value, weekday}) => {
+    const renderDay = ({day, value, weekday, date}) => {
+
+      const classes = ['rangepicker__cell'];
+
+      if (date > this.from && date < this.to) {
+        classes.push('rangepicker__selected-between');
+      }
+
+      if (date.valueOf() === this.from.valueOf()) {
+        classes.push('rangepicker__selected-from');
+      }
+
+      if (date.valueOf() === this.to.valueOf()) {
+        classes.push('rangepicker__selected-to');
+      }
+
       return `
         <button
           type="button"
-          class="rangepicker__cell"
+          class="${classes.join(' ')}"
           style="--start-from: ${weekday}"
           data-value="${value}"
           >
@@ -153,6 +181,7 @@ export default class RangePicker {
 
   initEventListeners() {
     document.addEventListener('click', this.clickOutside);
+    document.addEventListener('click', this.handleDayClick);
     const {input, controlLeft, controlRight} = this.subElements;
     input.addEventListener('click', this.toggle);
     controlLeft.addEventListener('click', this.decreaseMonth);
@@ -161,6 +190,7 @@ export default class RangePicker {
 
   removeEventListeners() {
     document.removeEventListener('click', this.clickOutside);
+    document.removeEventListener('click', this.handleDayClick);
     const {input} = this.subElements;
     input.removeEventListener('click', this.toggle);
   }
@@ -178,11 +208,11 @@ export default class RangePicker {
   }
 
   formatDate(date) {
-    const year = date.getFullYear().toString().substr(-2);
+    const year = date.getFullYear();
     const month = date.getMonth() + 1;
     const day = date.getDate().toString().padStart(2, '0');
 
-    return `${day}/${month}/${year}`;
+    return `${day}.${month}.${year}`;
   }
 
   daysInMonth(month, year) {
@@ -201,6 +231,27 @@ export default class RangePicker {
     const month = current.month - 1 < 0 ? 11 : current.month - 1;
     const year = current.month - 1 < 0 ? current.year - 1 : current.year;
     return { month, year };
+  }
+
+  updateMonthsMarkup() {
+    const {monthStart, monthEnd} = this.subElements;
+    monthStart.innerHTML = this.renderMonth(this.visibleMonth);
+    monthEnd.innerHTML = this.renderMonth(this.nextMonth);
+  }
+
+  setFromDate(date) {
+    const { from } = this.subElements;
+    this.from = date;
+    this.setToDate(date);
+    this.updateMonthsMarkup();
+    from.innerHTML = this.formatDate(this.from);
+  }
+
+  setToDate(date) {
+    const { to } = this.subElements;
+    this.to = date;
+    this.updateMonthsMarkup();
+    to.innerHTML = this.formatDate(this.to);
   }
 
 }
