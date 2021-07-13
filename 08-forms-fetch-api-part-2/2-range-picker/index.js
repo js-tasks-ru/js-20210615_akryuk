@@ -3,7 +3,12 @@ export default class RangePicker {
   mode = 'from';
 
   toggle = () => {
-    this.element.classList.toggle('rangepicker_open');
+    const opened = this.element.classList.contains('rangepicker_open');
+    if (opened) {
+      this.close();
+    } else {
+      this.open();
+    }
   }
 
   clickOutside = (e) => {
@@ -14,15 +19,18 @@ export default class RangePicker {
   }
 
   handleDayClick = (e) => {
+    console.log(this.mode);
     const dayBtn = e.target.closest('.rangepicker__cell');
     if (dayBtn) {
       if (this.mode === 'from') {
+        console.log('from clicked', new Date(dayBtn.dataset.value));
         this.setFromDate(new Date(dayBtn.dataset.value));
         this.mode = 'to';
         return;
       }
 
       if (this.mode === 'to') {
+        console.log('to clicked', new Date(dayBtn.dataset.value));
         this.setToDate(new Date(dayBtn.dataset.value));
         this.mode = 'from';
         this.close();
@@ -30,14 +38,17 @@ export default class RangePicker {
     }
   }
 
-  increaseMonth = () => {
-    this.visibleMonth = this.nextMonth;
-    this.updateMonthsMarkup();
-  }
+  handleMonthSwitcher = (e) => {
+    const leftControl = e.target.closest('.rangepicker__selector-control-left');
+    const rightControl = e.target.closest('.rangepicker__selector-control-right');
 
-  decreaseMonth = () => {
-    this.visibleMonth = this.prevMonth;
-    this.updateMonthsMarkup();
+    if (leftControl) {
+      this.decreaseMonth();
+    }
+
+    if (rightControl) {
+      this.increaseMonth();
+    }
   }
 
   constructor({ from = new Date(), to = new Date()}) {
@@ -57,7 +68,7 @@ export default class RangePicker {
 
     this.element.innerHTML = `
       ${this.renderInput()}
-      ${this.renderSelector()}
+      <div class="rangepicker__selector" data-element="selector"></div>
     `;
 
     this.setSubElements();
@@ -75,16 +86,14 @@ export default class RangePicker {
 
   renderSelector() {
     return `
-      <div class="rangepicker__selector" data-element="selector">
-        <div class="rangepicker__selector-arrow"></div>
-        <div class="rangepicker__selector-control-left" data-element="controlLeft"></div>
-        <div class="rangepicker__selector-control-right" data-element="controlRight"></div>
-        <div class="rangepicker__calendar" data-element="monthStart">
-          ${this.renderMonth(this.visibleMonth)}
-        </div>
-        <div class="rangepicker__calendar" data-element="monthEnd">
-          ${this.renderMonth(this.nextMonth)}
-        </div>
+      <div class="rangepicker__selector-arrow"></div>
+      <div class="rangepicker__selector-control-left"></div>
+      <div class="rangepicker__selector-control-right"></div>
+      <div class="rangepicker__calendar" data-element="monthStart">
+        ${this.renderMonth(this.visibleMonth)}
+      </div>
+      <div class="rangepicker__calendar" data-element="monthEnd">
+        ${this.renderMonth(this.nextMonth)}
       </div>
     `;
   }
@@ -175,22 +184,32 @@ export default class RangePicker {
     });
   }
 
+  open() {
+    const { selector } = this.subElements;
+    this.element.classList.add('rangepicker_open');
+    selector.innerHTML = this.renderSelector();
+    this.setSubElements();
+  }
+
   close() {
+    const { selector } = this.subElements;
     this.element.classList.remove('rangepicker_open');
+    selector.innerHTML = '';
+    this.mode = 'from';
   }
 
   initEventListeners() {
     document.addEventListener('click', this.clickOutside);
     document.addEventListener('click', this.handleDayClick);
-    const {input, controlLeft, controlRight} = this.subElements;
+    document.addEventListener('click', this.handleMonthSwitcher);
+    const {input} = this.subElements;
     input.addEventListener('click', this.toggle);
-    controlLeft.addEventListener('click', this.decreaseMonth);
-    controlRight.addEventListener('click', this.increaseMonth);
   }
 
   removeEventListeners() {
     document.removeEventListener('click', this.clickOutside);
     document.removeEventListener('click', this.handleDayClick);
+    document.removeEventListener('click', this.handleMonthSwitcher);
     const {input} = this.subElements;
     input.removeEventListener('click', this.toggle);
   }
@@ -209,7 +228,7 @@ export default class RangePicker {
 
   formatDate(date) {
     const year = date.getFullYear();
-    const month = date.getMonth() + 1;
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
     const day = date.getDate().toString().padStart(2, '0');
 
     return `${day}.${month}.${year}`;
@@ -217,6 +236,16 @@ export default class RangePicker {
 
   daysInMonth(month, year) {
     return new Date(year, month, 0).getDate();
+  }
+
+  increaseMonth() {
+    this.visibleMonth = this.nextMonth;
+    this.updateMonthsMarkup();
+  }
+
+  decreaseMonth() {
+    this.visibleMonth = this.prevMonth;
+    this.updateMonthsMarkup();
   }
 
   get nextMonth() {
@@ -253,5 +282,4 @@ export default class RangePicker {
     this.updateMonthsMarkup();
     to.innerHTML = this.formatDate(this.to);
   }
-
 }
