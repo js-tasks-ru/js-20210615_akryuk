@@ -7,7 +7,7 @@ export default class ProductForm {
 
   subElements = {}
 
-  product = {
+  defaultProduct = {
     title: '',
     description: '',
     quantity: 1,
@@ -34,10 +34,12 @@ export default class ProductForm {
     event.preventDefault();
     const {imagesList} = this.subElements;
     const tempFileUpload = document.createElement('input');
-    document.body.append(tempFileUpload);
+
     tempFileUpload.type = 'file';
     tempFileUpload.accept = 'image/*';
     tempFileUpload.hidden = true;
+
+    document.body.append(tempFileUpload);
     tempFileUpload.click();
 
     tempFileUpload.onchange = e => {
@@ -45,9 +47,10 @@ export default class ProductForm {
       if (tempFileUpload.files[0]) {
         const file = tempFileUpload.files[0];
         const data = new FormData();
-        data.append('image', file);
         const { name } = file;
         const { uploadImage } = this.subElements;
+
+        data.append('image', file);
         uploadImage.classList.add('is-loading');
 
         this.imageUploadRequest(data)
@@ -69,7 +72,7 @@ export default class ProductForm {
     this.render();
   }
 
-  async render() {
+  render() {
     this.element = document.createElement('div');
     this.element.className = 'product-form';
 
@@ -78,7 +81,7 @@ export default class ProductForm {
       !!this.productId ?
         fetchJson(`${BACKEND_URL}/api/rest/products?id=${this.productId}`)
         :
-        Promise.resolve([this.product]);
+        [this.defaultProduct];
 
     Promise.all([categoriesRequest, productRequest])
       .then(([categories, productData]) => {
@@ -236,28 +239,30 @@ export default class ProductForm {
     this.subElements = {};
   }
 
-  get formValues() {
+  get requestData() {
     const { productForm } = this.subElements;
+    const formData = new FormData(productForm);
+    const result = {};
+    const stringFields = ['description', 'title', 'subcategory'];
+    const numericFields = ['price', 'status', 'discount', 'quantity'];
+    const urls = formData.getAll('url');
+    const sources = formData.getAll('source');
 
-    const formData = [...new FormData(productForm)];
+    stringFields.forEach(field => {
+      result[field] = formData.get(field);
+    });
 
-    const urls = [...formData].filter(item => item[0] === 'url');
-    const sources = [...formData].filter(item => item[0] === 'source');
-    const images = urls.map((url, index) => ({ url: url[1], source: sources[index][1]}));
+    numericFields.forEach(field => {
+      result[field] = parseFloat(formData.get(field));
+    });
 
-    const rest = [...formData].filter(item => item[0] !== 'url' && item[0] !== 'source');
-    const restObj = {...Object.fromEntries(rest), images};
+    result.images = urls.map((url, index) => ({ url, source: sources[index]}));
 
-    restObj.price = parseFloat(restObj.price);
-    restObj.status = parseFloat(restObj.status);
-    restObj.discount = parseFloat(restObj.discount);
-    restObj.quantity = parseFloat(restObj.quantity);
-
-    return restObj;
+    return result;
   }
 
   async save() {
-    const body = {...this.formValues};
+    const body = {...this.requestData};
     if (this.productId) {
       body.id = this.productId;
     }
