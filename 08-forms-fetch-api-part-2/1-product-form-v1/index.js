@@ -32,6 +32,7 @@ export default class ProductForm {
 
   handleImageUpload = (event) => {
     event.preventDefault();
+    const {imagesList} = this.subElements;
     const tempFileUpload = document.createElement('input');
     document.body.append(tempFileUpload);
     tempFileUpload.type = 'file';
@@ -45,12 +46,14 @@ export default class ProductForm {
         const file = tempFileUpload.files[0];
         const data = new FormData();
         data.append('image', file);
-
+        const { name } = file;
         const { uploadImage } = this.subElements;
         uploadImage.classList.add('is-loading');
 
         this.imageUploadRequest(data)
-          .then(resp => console.log(resp))
+          .then(resp => {
+            imagesList.innerHTML += this.renderImage({url: resp.data.link, source: name});
+          })
           .catch(console.error)
           .finally(() => {
             tempFileUpload.remove();
@@ -208,7 +211,7 @@ export default class ProductForm {
 
   renderImagesList(images = []) {
     return `
-      <ul class="sortable-list">
+      <ul class="sortable-list" data-element="imagesList">
         ${images.map(img => this.renderImage(img)).join('')}
       </ul>
     `;
@@ -238,9 +241,9 @@ export default class ProductForm {
 
     const formData = [...new FormData(productForm)];
 
-    const images = [...formData].filter(item => item[0] === 'url').map((item) => {
-      return ({url: item[1], source: item[1].split('/').pop()});
-    });
+    const urls = [...formData].filter(item => item[0] === 'url');
+    const sources = [...formData].filter(item => item[0] === 'source');
+    const images = urls.map((url, index) => ({ url: url[1], source: sources[index][1]}));
 
     const rest = [...formData].filter(item => item[0] !== 'url' && item[0] !== 'source');
     const restObj = {...Object.fromEntries(rest), images};
@@ -278,13 +281,5 @@ export default class ProductForm {
     };
 
     return fetchJson('https://api.imgur.com/3/image', params);
-    // return fetch('https://api.imgur.com/3/image', {
-    //   method: 'POST',
-    //   headers: {
-    //     Authorization: `Client-ID ${IMGUR_CLIENT_ID}`
-    //   },
-    //   body: formData,
-    //   referrer: ''
-    // });
   }
 }
