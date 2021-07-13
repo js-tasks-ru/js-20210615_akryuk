@@ -1,19 +1,65 @@
 export default class RangePicker {
+  subElements = {}
+
+  toggle = () => {
+    this.element.classList.toggle('rangepicker_open');
+  }
+
+  clickOutside = (e) => {
+    const picker = e.target.closest('.rangepicker');
+    if (!picker) {
+      this.close();
+    }
+  }
+
   constructor({ from = new Date(), to = new Date()}) {
     this.from = from;
     this.to = to;
-
     this.render();
   }
 
   render() {
     this.element = document.createElement('div');
-    this.element.className = `rangepicker rangepicker_open`;
-    const html = `
+    this.element.className = `rangepicker`;
+
+    this.element.innerHTML = `
+      ${this.renderInput()}
+      ${this.renderSelector()}
+    `;
+
+    this.setSubElements();
+    this.initEventListeners();
+  }
+
+  renderInput() {
+    return `
       <div class="rangepicker__input" data-element="input">
         <span data-element="from">11/26/19</span> -
         <span data-element="to">12/26/19</span>
       </div>
+    `;
+  }
+
+  setSubElements() {
+    const subs = this.element.querySelectorAll('[data-element]');
+    [...subs].forEach(sub => {
+      const key = sub.dataset.element;
+      this.subElements[key] = sub;
+    });
+  }
+
+  close() {
+    this.element.classList.remove('rangepicker_open');
+  }
+
+  initEventListeners() {
+    document.addEventListener('click', this.clickOutside);
+    const {input} = this.subElements;
+    input.addEventListener('click', this.toggle);
+  }
+
+  renderSelector() {
+    return `
       <div class="rangepicker__selector" data-element="selector">
         <div class="rangepicker__selector-arrow"></div>
         <div class="rangepicker__selector-control-left"></div>
@@ -175,8 +221,6 @@ export default class RangePicker {
         </div>
       </div>
     `;
-
-    this.element.innerHTML = html;
   }
 
 }
