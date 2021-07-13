@@ -1,6 +1,5 @@
 export default class RangePicker {
-  subElements = {}
-  mode = 'from';
+  subElements = {};
 
   toggle = () => {
     const opened = this.element.classList.contains('rangepicker_open');
@@ -19,20 +18,21 @@ export default class RangePicker {
   }
 
   handleDayClick = (e) => {
-    console.log(this.mode);
     const dayBtn = e.target.closest('.rangepicker__cell');
     if (dayBtn) {
-      if (this.mode === 'from') {
-        console.log('from clicked', new Date(dayBtn.dataset.value));
-        this.setFromDate(new Date(dayBtn.dataset.value));
-        this.mode = 'to';
-        return;
-      }
 
-      if (this.mode === 'to') {
-        console.log('to clicked', new Date(dayBtn.dataset.value));
-        this.setToDate(new Date(dayBtn.dataset.value));
-        this.mode = 'from';
+      const hasTo = !!document.querySelectorAll('.rangepicker__selected-to').length;
+
+      if (hasTo) {
+        this.from = new Date(dayBtn.dataset.value);
+        this.to = null;
+        this.updateMonthsMarkup();
+      } else {
+        this.to = new Date(dayBtn.dataset.value);
+        const { from, to } = this.subElements;
+        from.innerHTML = this.formatDate(this.from);
+        to.innerHTML = this.formatDate(this.to);
+        this.updateMonthsMarkup();
         this.close();
       }
     }
@@ -133,7 +133,7 @@ export default class RangePicker {
 
       const classes = ['rangepicker__cell'];
 
-      if (date > this.from && date < this.to) {
+      if (date > this.from && date < this.to && this.to) {
         classes.push('rangepicker__selected-between');
       }
 
@@ -141,7 +141,7 @@ export default class RangePicker {
         classes.push('rangepicker__selected-from');
       }
 
-      if (date.valueOf() === this.to.valueOf()) {
+      if (this.to && date.valueOf() === this.to.valueOf()) {
         classes.push('rangepicker__selected-to');
       }
 
@@ -195,23 +195,26 @@ export default class RangePicker {
     const { selector } = this.subElements;
     this.element.classList.remove('rangepicker_open');
     selector.innerHTML = '';
-    this.mode = 'from';
   }
 
   initEventListeners() {
     document.addEventListener('click', this.clickOutside);
-    document.addEventListener('click', this.handleDayClick);
     document.addEventListener('click', this.handleMonthSwitcher);
+    document.addEventListener('click', this.handleDayClick);
+
     const {input} = this.subElements;
     input.addEventListener('click', this.toggle);
+
   }
 
   removeEventListeners() {
     document.removeEventListener('click', this.clickOutside);
-    document.removeEventListener('click', this.handleDayClick);
     document.removeEventListener('click', this.handleMonthSwitcher);
+    document.removeEventListener('click', this.handleDayClick);
+
     const {input} = this.subElements;
     input.removeEventListener('click', this.toggle);
+
   }
 
   remove() {
@@ -227,11 +230,13 @@ export default class RangePicker {
   }
 
   formatDate(date) {
-    const year = date.getFullYear();
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const day = date.getDate().toString().padStart(2, '0');
+    if (date) {
+      const year = date.getFullYear();
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const day = date.getDate().toString().padStart(2, '0');
 
-    return `${day}.${month}.${year}`;
+      return `${day}.${month}.${year}`;
+    }
   }
 
   daysInMonth(month, year) {
@@ -266,20 +271,5 @@ export default class RangePicker {
     const {monthStart, monthEnd} = this.subElements;
     monthStart.innerHTML = this.renderMonth(this.visibleMonth);
     monthEnd.innerHTML = this.renderMonth(this.nextMonth);
-  }
-
-  setFromDate(date) {
-    const { from } = this.subElements;
-    this.from = date;
-    this.setToDate(date);
-    this.updateMonthsMarkup();
-    from.innerHTML = this.formatDate(this.from);
-  }
-
-  setToDate(date) {
-    const { to } = this.subElements;
-    this.to = date;
-    this.updateMonthsMarkup();
-    to.innerHTML = this.formatDate(this.to);
   }
 }
