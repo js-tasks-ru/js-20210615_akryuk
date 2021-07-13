@@ -34,8 +34,8 @@ export default class RangePicker {
   renderInput() {
     return `
       <div class="rangepicker__input" data-element="input">
-        <span data-element="from">11/26/19</span> -
-        <span data-element="to">12/26/19</span>
+        <span data-element="from">${this.formatDate(this.from)}</span> -
+        <span data-element="to">${this.formatDate(this.to)}</span>
       </div>
     `;
   }
@@ -239,6 +239,18 @@ export default class RangePicker {
         </div>
       </div>
     `;
+  }
+
+  formatDate(date) {
+    const year = date.getFullYear().toString().substr(-2);
+    const month = date.getMonth() + 1;
+    const day = date.getDate().toString().padStart(2, '0');
+
+    return `${day}/${month}/${year}`;
+  }
+
+  daysInMonth(month, year) {
+    return new Date(year, month, 0).getDate();
   }
 
 }
