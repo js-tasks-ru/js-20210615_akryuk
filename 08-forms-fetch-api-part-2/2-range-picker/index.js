@@ -206,7 +206,6 @@ export default class RangePicker {
   close() {
     const { selector } = this.subElements;
     this.element.classList.remove('rangepicker_open');
-    selector.innerHTML = '';
     if (!this.to) {
       this.from = this.defaultsFrom;
       this.to = this.defaultsTo;
