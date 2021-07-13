@@ -12,9 +12,30 @@ export default class RangePicker {
     }
   }
 
+  increaseMonth = () => {
+    const {monthStart, monthEnd} = this.subElements;
+    this.visibleMonth = this.nextMonth;
+
+    monthStart.innerHTML = this.renderMonth(this.visibleMonth);
+    monthEnd.innerHTML = this.renderMonth(this.nextMonth);
+  }
+
+  decreaseMonth = () => {
+    const {monthStart, monthEnd} = this.subElements;
+    this.visibleMonth = this.prevMonth;
+
+    monthStart.innerHTML = this.renderMonth(this.visibleMonth);
+    monthEnd.innerHTML = this.renderMonth(this.nextMonth);
+  }
+
   constructor({ from = new Date(), to = new Date()}) {
     this.from = from;
     this.to = to;
+    this.visibleMonth = {
+      year: this.from.getFullYear(),
+      month: this.from.getMonth()
+    };
+
     this.render();
   }
 
@@ -40,6 +61,84 @@ export default class RangePicker {
     `;
   }
 
+  renderSelector() {
+    return `
+      <div class="rangepicker__selector" data-element="selector">
+        <div class="rangepicker__selector-arrow"></div>
+        <div class="rangepicker__selector-control-left" data-element="controlLeft"></div>
+        <div class="rangepicker__selector-control-right" data-element="controlRight"></div>
+        <div class="rangepicker__calendar" data-element="monthStart">
+          ${this.renderMonth(this.visibleMonth)}
+        </div>
+        <div class="rangepicker__calendar" data-element="monthEnd">
+          ${this.renderMonth(this.nextMonth)}
+        </div>
+      </div>
+    `;
+  }
+
+  renderMonth({month, year}) {
+    const months = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December'
+    ];
+
+    const daysInMonth = this.daysInMonth(month + 1, year);
+    const days = [];
+
+    for (let i = 1; i <= daysInMonth; i++) {
+
+      const date = new Date(year, month, i);
+
+      days.push({
+        day: i,
+        value: date.toISOString(),
+        weekday: date.getDay(),
+      });
+    }
+
+    const renderDay = ({day, value, weekday}) => {
+      return `
+        <button
+          type="button"
+          class="rangepicker__cell"
+          style="--start-from: ${weekday}"
+          data-value="${value}"
+          >
+            ${day}
+          </button>
+      `;
+    };
+
+    return `
+      <div class="rangepicker__month-indicator">
+        <time datetime="${months[month]}">${months[month]}</time>
+      </div>
+      <div class="rangepicker__day-of-week">
+        <div>Пн</div>
+        <div>Вт</div>
+        <div>Ср</div>
+        <div>Чт</div>
+        <div>Пт</div>
+        <div>Сб</div>
+        <div>Вс</div>
+      </div>
+      <div class="rangepicker__date-grid">
+        ${days.map(date => renderDay(date)).join('')}
+      </div>
+    `;
+  }
+
   setSubElements() {
     const subs = this.element.querySelectorAll('[data-element]');
     [...subs].forEach(sub => {
@@ -54,8 +153,10 @@ export default class RangePicker {
 
   initEventListeners() {
     document.addEventListener('click', this.clickOutside);
-    const {input} = this.subElements;
+    const {input, controlLeft, controlRight} = this.subElements;
     input.addEventListener('click', this.toggle);
+    controlLeft.addEventListener('click', this.decreaseMonth);
+    controlRight.addEventListener('click', this.increaseMonth);
   }
 
   removeEventListeners() {
@@ -76,171 +177,6 @@ export default class RangePicker {
     this.remove();
   }
 
-  renderSelector() {
-    return `
-      <div class="rangepicker__selector" data-element="selector">
-        <div class="rangepicker__selector-arrow"></div>
-        <div class="rangepicker__selector-control-left"></div>
-        <div class="rangepicker__selector-control-right"></div>
-        <div class="rangepicker__calendar">
-          <div class="rangepicker__month-indicator">
-            <time datetime="November">November</time>
-          </div>
-          <div class="rangepicker__day-of-week">
-            <div>Пн</div>
-            <div>Вт</div>
-            <div>Ср</div>
-            <div>Чт</div>
-            <div>Пт</div>
-            <div>Сб</div>
-            <div>Вс</div>
-          </div>
-          <div class="rangepicker__date-grid">
-            <button type="button" class="rangepicker__cell" data-value="2019-11-01T17:53:50.338Z" style="--start-from: 5">1</button>
-            <button type="button" class="rangepicker__cell" data-value="2019-11-02T17:53:50.338Z">2</button>
-            <button type="button" class="rangepicker__cell" data-value="2019-11-03T17:53:50.338Z">3</button>
-            <button type="button" class="rangepicker__cell" data-value="2019-11-04T17:53:50.338Z">4</button>
-            <button type="button" class="rangepicker__cell" data-value="2019-11-05T17:53:50.338Z">5</button>
-            <button type="button" class="rangepicker__cell" data-value="2019-11-06T17:53:50.338Z">6</button>
-            <button type="button" class="rangepicker__cell" data-value="2019-11-07T17:53:50.338Z">7</button>
-            <button type="button" class="rangepicker__cell" data-value="2019-11-08T17:53:50.338Z">8</button>
-            <button type="button" class="rangepicker__cell" data-value="2019-11-09T17:53:50.338Z">9</button>
-            <button type="button" class="rangepicker__cell" data-value="2019-11-10T17:53:50.338Z">10</button>
-            <button type="button" class="rangepicker__cell" data-value="2019-11-11T17:53:50.338Z">11</button>
-            <button type="button" class="rangepicker__cell" data-value="2019-11-12T17:53:50.338Z">12</button>
-            <button type="button" class="rangepicker__cell" data-value="2019-11-13T17:53:50.338Z">13</button>
-            <button type="button" class="rangepicker__cell" data-value="2019-11-14T17:53:50.338Z">14</button>
-            <button type="button" class="rangepicker__cell" data-value="2019-11-15T17:53:50.338Z">15</button>
-            <button type="button" class="rangepicker__cell" data-value="2019-11-16T17:53:50.338Z">16</button>
-            <button type="button" class="rangepicker__cell" data-value="2019-11-17T17:53:50.338Z">17</button>
-            <button type="button" class="rangepicker__cell" data-value="2019-11-18T17:53:50.338Z">18</button>
-            <button type="button" class="rangepicker__cell" data-value="2019-11-19T17:53:50.338Z">19</button>
-            <button type="button" class="rangepicker__cell" data-value="2019-11-20T17:53:50.338Z">20</button>
-            <button type="button" class="rangepicker__cell" data-value="2019-11-21T17:53:50.338Z">21</button>
-            <button type="button" class="rangepicker__cell" data-value="2019-11-22T17:53:50.338Z">22</button>
-            <button type="button" class="rangepicker__cell" data-value="2019-11-23T17:53:50.338Z">23</button>
-            <button type="button" class="rangepicker__cell" data-value="2019-11-24T17:53:50.338Z">24</button>
-            <button type="button" class="rangepicker__cell" data-value="2019-11-25T17:53:50.338Z">25</button>
-            <button type="button" class="rangepicker__cell rangepicker__selected-from"
-                    data-value="2019-11-26T17:53:50.338Z">26
-            </button>
-            <button type="button" class="rangepicker__cell rangepicker__selected-between"
-                    data-value="2019-11-27T17:53:50.338Z">27
-            </button>
-            <button type="button" class="rangepicker__cell rangepicker__selected-between"
-                    data-value="2019-11-28T17:53:50.338Z">28
-            </button>
-            <button type="button" class="rangepicker__cell rangepicker__selected-between"
-                    data-value="2019-11-29T17:53:50.338Z">29
-            </button>
-            <button type="button" class="rangepicker__cell rangepicker__selected-between"
-                    data-value="2019-11-30T17:53:50.338Z">30
-            </button>
-          </div>
-        </div>
-        <div class="rangepicker__calendar">
-          <div class="rangepicker__month-indicator">
-            <time datetime="December">December</time>
-          </div>
-          <div class="rangepicker__day-of-week">
-            <div>Пн</div>
-            <div>Вт</div>
-            <div>Ср</div>
-            <div>Чт</div>
-            <div>Пт</div>
-            <div>Сб</div>
-            <div>Вс</div>
-          </div>
-          <div class="rangepicker__date-grid">
-            <button type="button" class="rangepicker__cell rangepicker__selected-between"
-                    data-value="2019-12-01T17:53:50.338Z" style="--start-from: 7">1
-            </button>
-            <button type="button" class="rangepicker__cell rangepicker__selected-between"
-                    data-value="2019-12-02T17:53:50.338Z">2
-            </button>
-            <button type="button" class="rangepicker__cell rangepicker__selected-between"
-                    data-value="2019-12-03T17:53:50.338Z">3
-            </button>
-            <button type="button" class="rangepicker__cell rangepicker__selected-between"
-                    data-value="2019-12-04T17:53:50.338Z">4
-            </button>
-            <button type="button" class="rangepicker__cell rangepicker__selected-between"
-                    data-value="2019-12-05T17:53:50.338Z">5
-            </button>
-            <button type="button" class="rangepicker__cell rangepicker__selected-between"
-                    data-value="2019-12-06T17:53:50.338Z">6
-            </button>
-            <button type="button" class="rangepicker__cell rangepicker__selected-between"
-                    data-value="2019-12-07T17:53:50.338Z">7
-            </button>
-            <button type="button" class="rangepicker__cell rangepicker__selected-between"
-                    data-value="2019-12-08T17:53:50.338Z">8
-            </button>
-            <button type="button" class="rangepicker__cell rangepicker__selected-between"
-                    data-value="2019-12-09T17:53:50.338Z">9
-            </button>
-            <button type="button" class="rangepicker__cell rangepicker__selected-between"
-                    data-value="2019-12-10T17:53:50.338Z">10
-            </button>
-            <button type="button" class="rangepicker__cell rangepicker__selected-between"
-                    data-value="2019-12-11T17:53:50.338Z">11
-            </button>
-            <button type="button" class="rangepicker__cell rangepicker__selected-between"
-                    data-value="2019-12-12T17:53:50.338Z">12
-            </button>
-            <button type="button" class="rangepicker__cell rangepicker__selected-between"
-                    data-value="2019-12-13T17:53:50.338Z">13
-            </button>
-            <button type="button" class="rangepicker__cell rangepicker__selected-between"
-                    data-value="2019-12-14T17:53:50.338Z">14
-            </button>
-            <button type="button" class="rangepicker__cell rangepicker__selected-between"
-                    data-value="2019-12-15T17:53:50.338Z">15
-            </button>
-            <button type="button" class="rangepicker__cell rangepicker__selected-between"
-                    data-value="2019-12-16T17:53:50.338Z">16
-            </button>
-            <button type="button" class="rangepicker__cell rangepicker__selected-between"
-                    data-value="2019-12-17T17:53:50.338Z">17
-            </button>
-            <button type="button" class="rangepicker__cell rangepicker__selected-between"
-                    data-value="2019-12-18T17:53:50.338Z">18
-            </button>
-            <button type="button" class="rangepicker__cell rangepicker__selected-between"
-                    data-value="2019-12-19T17:53:50.338Z">19
-            </button>
-            <button type="button" class="rangepicker__cell rangepicker__selected-between"
-                    data-value="2019-12-20T17:53:50.338Z">20
-            </button>
-            <button type="button" class="rangepicker__cell rangepicker__selected-between"
-                    data-value="2019-12-21T17:53:50.338Z">21
-            </button>
-            <button type="button" class="rangepicker__cell rangepicker__selected-between"
-                    data-value="2019-12-22T17:53:50.338Z">22
-            </button>
-            <button type="button" class="rangepicker__cell rangepicker__selected-between"
-                    data-value="2019-12-23T17:53:50.338Z">23
-            </button>
-            <button type="button" class="rangepicker__cell rangepicker__selected-between"
-                    data-value="2019-12-24T17:53:50.338Z">24
-            </button>
-            <button type="button" class="rangepicker__cell rangepicker__selected-between"
-                    data-value="2019-12-25T17:53:50.338Z">25
-            </button>
-            <button type="button" class="rangepicker__cell rangepicker__selected-to" data-value="2019-12-26T17:53:50.338Z">
-              26
-            </button>
-            <button type="button" class="rangepicker__cell" data-value="2019-12-27T17:53:50.338Z">27</button>
-            <button type="button" class="rangepicker__cell" data-value="2019-12-28T17:53:50.338Z">28</button>
-            <button type="button" class="rangepicker__cell" data-value="2019-12-29T17:53:50.338Z">29</button>
-            <button type="button" class="rangepicker__cell" data-value="2019-12-30T17:53:50.338Z">30</button>
-            <button type="button" class="rangepicker__cell" data-value="2019-12-31T17:53:50.338Z">31</button>
-          </div>
-        </div>
-      </div>
-    `;
-  }
-
   formatDate(date) {
     const year = date.getFullYear().toString().substr(-2);
     const month = date.getMonth() + 1;
@@ -251,6 +187,20 @@ export default class RangePicker {
 
   daysInMonth(month, year) {
     return new Date(year, month, 0).getDate();
+  }
+
+  get nextMonth() {
+    const current = {...this.visibleMonth};
+    const month = current.month + 1 > 11 ? 0 : current.month + 1;
+    const year = current.month + 1 > 11 ? current.year + 1 : current.year;
+    return { month, year };
+  }
+
+  get prevMonth() {
+    const current = {...this.visibleMonth};
+    const month = current.month - 1 < 0 ? 11 : current.month - 1;
+    const year = current.month - 1 < 0 ? current.year - 1 : current.year;
+    return { month, year };
   }
 
 }
