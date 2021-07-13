@@ -30,8 +30,8 @@ export default class RangePicker {
       } else {
         this.to = new Date(dayBtn.dataset.value);
         const { from, to } = this.subElements;
-        from.innerHTML = this.formatDate(this.from);
-        to.innerHTML = this.formatDate(this.to);
+        from.innerHTML = this.formattedFrom;
+        to.innerHTML = this.formattedTo;
         this.updateMonthsMarkup();
         this.close();
       }
@@ -78,8 +78,8 @@ export default class RangePicker {
   renderInput() {
     return `
       <div class="rangepicker__input" data-element="input">
-        <span data-element="from">${this.formatDate(this.from)}</span> -
-        <span data-element="to">${this.formatDate(this.to)}</span>
+        <span data-element="from">${this.formattedFrom}</span> -
+        <span data-element="to">${this.formattedTo}</span>
       </div>
     `;
   }
@@ -265,6 +265,14 @@ export default class RangePicker {
     const month = current.month - 1 < 0 ? 11 : current.month - 1;
     const year = current.month - 1 < 0 ? current.year - 1 : current.year;
     return { month, year };
+  }
+
+  get formattedTo() {
+    return this.formatDate(this.to);
+  }
+
+  get formattedFrom() {
+    return this.formatDate(this.from);
   }
 
   updateMonthsMarkup() {
