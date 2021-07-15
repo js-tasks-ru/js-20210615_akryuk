@@ -48,8 +48,8 @@ export default class SortableList {
         return;
       }
 
+      // Rest
       this.items.forEach(item => {
-        // Rest
         if (!item.classList.contains('sortable-list__item_dragging')) {
           const { top, bottom, height } = item.getBoundingClientRect();
           if (e.clientY > top + height / 2 && e.clientY < bottom) {
@@ -87,7 +87,7 @@ export default class SortableList {
   }
 
   render() {
-    this.element = this.element.createElement('ul');
+    this.element = document.createElement('ul');
     this.element.className = 'sortable-list';
     this.items.forEach(item => {
       item.classList.add('sortable-list__item');
@@ -124,7 +124,7 @@ export default class SortableList {
   }
 
   get placeholder() {
-    const li = this.element.createElement('li');
+    const li = document.createElement('li');
     li.classList.add('sortable-list__placeholder');
 
     return li;
