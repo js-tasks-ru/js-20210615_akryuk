@@ -46,8 +46,8 @@ export default class ProductForm {
 
     tempFileUpload.onchange = e => {
       e.preventDefault();
-      if (tempFileUpload.files[0]) {
-        const file = tempFileUpload.files[0];
+      const [file] = tempFileUpload.files;
+      if (file) {
         const data = new FormData();
         const { name } = file;
         const { uploadImage } = this.subElements;
@@ -90,10 +90,11 @@ export default class ProductForm {
 
     Promise.all([categoriesRequest, productRequest])
       .then(([categories, productData]) => {
-        this.renderElementContent(productData[0], categories);
+        const [product] = productData;
+        this.renderElementContent(product, categories);
         this.setSubElements();
-        this.renderImagesList(productData[0].images);
-        this.setFormValues(productData[0]);
+        this.renderImagesList(product.images);
+        this.setFormValues(product);
         this.initEventListeners();
       })
       .catch(console.error);
