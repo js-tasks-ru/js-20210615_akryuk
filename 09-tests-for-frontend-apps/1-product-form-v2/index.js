@@ -1,4 +1,4 @@
-import SortableList from '../../2-sortable-list/src/index.js';
+import SortableList from '../2-sortable-list/index.js';
 import escapeHtml from './utils/escape-html.js';
 import fetchJson from './utils/fetch-json.js';
 
@@ -7,7 +7,8 @@ const BACKEND_URL = 'https://course-js.javascript.ru';
 
 export default class ProductForm {
 
-  subElements = {}
+  subElements = {};
+  imagesList = null;
 
   defaultProduct = {
     title: '',
@@ -34,7 +35,6 @@ export default class ProductForm {
 
   handleImageUpload = (event) => {
     event.preventDefault();
-    const {imagesList} = this.subElements;
     const tempFileUpload = document.createElement('input');
 
     tempFileUpload.type = 'file';
@@ -57,7 +57,10 @@ export default class ProductForm {
 
         this.imageUploadRequest(data)
           .then(resp => {
-            imagesList.innerHTML += this.renderImage({url: resp.data.link, source: name});
+            const newImage = document.createElement('li');
+            newImage.className = 'products-edit__imagelist-item';
+            newImage.innerHTML = this.renderImage({url: resp.data.link, source: name});
+            this.imagesList.addItem(newImage);
           })
           .catch(console.error)
           .finally(() => {
@@ -89,6 +92,7 @@ export default class ProductForm {
       .then(([categories, productData]) => {
         this.renderElementContent(productData[0], categories);
         this.setSubElements();
+        this.renderImagesList(productData[0].images);
         this.setFormValues(productData[0]);
         this.initEventListeners();
       })
@@ -98,11 +102,8 @@ export default class ProductForm {
   }
 
   initEventListeners() {
-    const { productForm, imageListContainer, uploadImage } = this.subElements;
-    const deleteButtons = imageListContainer.querySelectorAll('[data-delete-handle]');
-
+    const { productForm, uploadImage } = this.subElements;
     productForm.addEventListener('submit', this.handleSubmit);
-    deleteButtons.forEach(btn => btn.addEventListener('click', this.deleteImage));
     uploadImage.addEventListener('click', this.handleImageUpload);
   }
 
@@ -154,9 +155,7 @@ export default class ProductForm {
         </div>
         <div class="form-group form-group__wide" data-element="sortable-list-container">
           <label class="form-label">Фото</label>
-          <div data-element="imageListContainer">
-            ${this.renderImagesList(product.images)}
-          </div>
+          <div data-element="imageListContainer"></div>
           <button type="button" name="uploadImage" data-element="uploadImage" class="button-primary-outline"><span>Загрузить</span></button>
         </div>
         <div class="form-group form-group__half_left">
@@ -209,7 +208,6 @@ export default class ProductForm {
 
   renderImage(data) {
     return `
-      <li class="products-edit__imagelist-item sortable-list__item" style="">
         <input type="hidden" name="url" value="${data.url}">
         <input type="hidden" name="source" value="${data.source}">
         <span>
@@ -220,15 +218,19 @@ export default class ProductForm {
         <button type="button" class="products-edit__remove-btn">
           <img src="icon-trash.svg" data-delete-handle="" alt="delete">
         </button>
-      </li>`;
+      `;
   }
 
   renderImagesList(images = []) {
-    return `
-      <ul class="sortable-list" data-element="imagesList">
-        ${images.map(img => this.renderImage(img)).join('')}
-      </ul>
-    `;
+    const imagesNodeList = images.map(image => {
+      const li = document.createElement('li');
+      li.classList.add('products-edit__imagelist-item');
+      li.innerHTML = this.renderImage(image);
+
+      return li;
+    });
+    this.imagesList = !!this.imagesList ? this.imagesList : new SortableList({items: imagesNodeList});
+    this.subElements.imageListContainer.append(this.imagesList.element);
   }
 
   setSubElements() {
@@ -247,6 +249,9 @@ export default class ProductForm {
 
   destroy() {
     this.removeEventListeners();
+    if (this.imagesList) {
+      this.imagesList.destroy();
+    }
     this.remove();
     this.subElements = {};
   }

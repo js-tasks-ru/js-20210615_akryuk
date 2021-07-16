@@ -89,11 +89,7 @@ export default class SortableList {
   render() {
     this.element = document.createElement('ul');
     this.element.className = 'sortable-list';
-    this.items.forEach(item => {
-      item.classList.add('sortable-list__item');
-      this.element.append(item);
-    });
-
+    this.items.forEach(item => this.addItem(item));
     this.initEventListeners();
   }
 
@@ -111,6 +107,13 @@ export default class SortableList {
     document.removeEventListener('pointerup', this.handlePointerUp);
   }
 
+  addItem(item) {
+    item.classList.add('sortable-list__item');
+    this.element.append(item);
+    const dragHandler = item.querySelector(`[data-grab-handle]`);
+    dragHandler.ondragstart = () => false;
+  }
+
   remove() {
     if (this.element) {
       this.element.remove();
@@ -125,6 +128,7 @@ export default class SortableList {
 
   get placeholder() {
     const li = document.createElement('li');
+    li.style.minHeight = '60px';
     li.classList.add('sortable-list__placeholder');
 
     return li;
