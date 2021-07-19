@@ -9,6 +9,8 @@ const BACKEND_URL = 'https://course-js.javascript.ru/';
 
 export default class Page {
   element;
+  subElements = {};
+
   range = {
     from: new Date(2021, 5, 19),
     to: new Date(2021, 6, 19)
@@ -47,7 +49,6 @@ export default class Page {
   rangePicker = new RangePicker(this.range);
 
   handleDateSelect = (e) => {
-    console.log(e.detail);
     this.range = e.detail;
     const {from, to} = this.range;
     this.orders.update(from, to);
@@ -63,10 +64,15 @@ export default class Page {
         <h2 class="page-title">Панель управления</h2>
         <div data-element="rangePicker"></div>
       </div>
-      <div class="dashboard__charts"></div>
+      <div class="dashboard__charts">
+          <div class="dashboard__chart_orders" data-element="ordersChart"></div>
+          <div class="dashboard__chart_sales" data-element="salesChart"></div>
+          <div class="dashboard__chart_customers" data-element="customersChart"></div>
+      </div>
       <h3 class="block-title">Лидеры продаж</h3>
       <div data-element="sortableTable"></div>
     `;
+    this.setSubElements();
 
     this.renderPicker();
     this.renderCharts();
@@ -78,20 +84,18 @@ export default class Page {
   }
 
   renderPicker() {
-    this.element.querySelector('[data-element=rangePicker]').append(this.rangePicker.element);
+    this.subElements.rangePicker.append(this.rangePicker.element);
   }
 
   renderCharts() {
-    this.orders.element.classList.add('dashboard__chart_orders');
-    this.sales.element.classList.add('dashboard__chart_sales');
-    this.customers.element.classList.add('dashboard__chart_customers');
-    this.element.querySelector('.dashboard__charts').append(this.orders.element);
-    this.element.querySelector('.dashboard__charts').append(this.sales.element);
-    this.element.querySelector('.dashboard__charts').append(this.customers.element);
+    const { ordersChart, salesChart, customersChart } = this.subElements;
+    ordersChart.append(this.orders.element);
+    salesChart.append(this.sales.element);
+    customersChart.append(this.customers.element);
   }
 
   renderTable() {
-    this.element.querySelector('[data-element=sortableTable]').append(this.table.element);
+    this.subElements.sortableTable.append(this.table.element);
   }
 
   initEventListeners() {
@@ -117,5 +121,13 @@ export default class Page {
     this.sales.destroy();
     this.customers.destroy();
     this.orders.destroy();
+  }
+
+  setSubElements() {
+    const subs = this.element.querySelectorAll('[data-element]');
+    [...subs].forEach(sub => {
+      const key = sub.dataset.element;
+      this.subElements[key] = sub;
+    });
   }
 }
