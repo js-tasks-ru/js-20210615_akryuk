@@ -26,7 +26,7 @@ export default class Page {
       url: '/api/dashboard/sales',
       range: this.range
     },
-    clients: {
+    customers: {
       label: 'Клиенты',
       url: '/api/dashboard/customers',
       range: this.range
@@ -39,14 +39,20 @@ export default class Page {
     start: 0,
     step: 30,
     end: 30
-  })
+  });
 
   orders = new ColumnChart(this.charts.orders)
   sales = new ColumnChart(this.charts.orders)
-  clients = new ColumnChart(this.charts.clients)
+  customers = new ColumnChart(this.charts.customers);
+  rangePicker = new RangePicker(this.range);
 
-  constructor() {
-    this.rangePicker = new RangePicker(this.range);
+  handleDateSelect = (e) => {
+    console.log(e.detail);
+    this.range = e.detail;
+    const {from, to} = this.range;
+    this.orders.update(from, to);
+    this.customers.update(from, to);
+    this.sales.update(from, to);
   }
 
   async render() {
@@ -55,34 +61,61 @@ export default class Page {
     this.element.innerHTML = `
       <div class="content__top-panel">
         <h2 class="page-title">Панель управления</h2>
-        <div data-element="rangePickerContainer"></div>
+        <div data-element="rangePicker"></div>
       </div>
       <div class="dashboard__charts"></div>
       <h3 class="block-title">Лидеры продаж</h3>
-      <div data-element="dashboardTableContainer"></div>
+      <div data-element="sortableTable"></div>
     `;
 
     this.renderPicker();
     this.renderCharts();
     this.renderTable();
 
+    this.initEventListeners();
+
     return this.element;
   }
 
   renderPicker() {
-    this.element.querySelector('[data-element=rangePickerContainer]').append(this.rangePicker.element);
+    this.element.querySelector('[data-element=rangePicker]').append(this.rangePicker.element);
   }
 
   renderCharts() {
     this.orders.element.classList.add('dashboard__chart_orders');
     this.sales.element.classList.add('dashboard__chart_sales');
-    this.clients.element.classList.add('dashboard__chart_customers');
+    this.customers.element.classList.add('dashboard__chart_customers');
     this.element.querySelector('.dashboard__charts').append(this.orders.element);
     this.element.querySelector('.dashboard__charts').append(this.sales.element);
-    this.element.querySelector('.dashboard__charts').append(this.clients.element);
+    this.element.querySelector('.dashboard__charts').append(this.customers.element);
   }
 
   renderTable() {
-    this.element.querySelector('[data-element=dashboardTableContainer]').append(this.table.element);
+    this.element.querySelector('[data-element=sortableTable]').append(this.table.element);
+  }
+
+  initEventListeners() {
+    window.addEventListener('date-select', this.handleDateSelect);
+  }
+
+  removeEventListeners() {
+    window.removeEventListener('date-select', this.handleDateSelect);
+  }
+
+  remove() {
+    if (this.element) {
+      this.element.remove();
+    }
+  }
+
+  destroy() {
+    this.remove();
+    this.removeEventListeners();
+    this.element = null;
+    this.table.destroy();
+    this.rangePicker.destroy();
+    this.sales.destroy();
+    this.customers.destroy();
+    this.orders.destroy();
   }
 }
