@@ -3,57 +3,49 @@ import SortableTable from './components/sortable-table/src/index.js';
 import ColumnChart from './components/column-chart/src/index.js';
 import header from './bestsellers-header.js';
 
-import fetchJson from './utils/fetch-json.js';
-
-const BACKEND_URL = 'https://course-js.javascript.ru/';
-
 export default class Page {
   element;
   subElements = {};
 
-  range = {
-    from: new Date(2021, 5, 19),
-    to: new Date(2021, 6, 19)
-  }
+  constructor() {
 
-  charts = {
-    orders: {
+    this.range = this.currentRange;
+
+    this.rangePicker = new RangePicker(this.range);
+
+    this.orders = new ColumnChart({
       label: 'Заказы',
       url: '/api/dashboard/orders',
       range: this.range
-    },
-    sales: {
+    });
+
+    this.sales = new ColumnChart({
       label: 'Продажи',
       formatHeading: data => `$${data}`,
       url: '/api/dashboard/sales',
       range: this.range
-    },
-    customers: {
+    });
+
+    this.customers = new ColumnChart({
       label: 'Клиенты',
       url: '/api/dashboard/customers',
       range: this.range
-    }
+    });
+
+    this.table = new SortableTable(header, {
+      url: `api/dashboard/bestsellers?from=${this.range.from.toISOString()}&to=${this.range.to.toISOString()}`,
+      isSortLocally: true,
+      start: 0,
+      end: 30
+    });
+
   }
-
-  table = new SortableTable(header, {
-    url: 'api/dashboard/bestsellers',
-    isSortLocally: true,
-    start: 0,
-    step: 30,
-    end: 30
-  });
-
-  orders = new ColumnChart(this.charts.orders)
-  sales = new ColumnChart(this.charts.orders)
-  customers = new ColumnChart(this.charts.customers);
-  rangePicker = new RangePicker(this.range);
 
   handleDateSelect = (e) => {
     this.range = e.detail;
     const {from, to} = this.range;
-    this.orders.update(from, to);
-    this.customers.update(from, to);
-    this.sales.update(from, to);
+    this.updateCharts(from, to);
+    this.updateTable(from, to);
   }
 
   async render() {
@@ -72,6 +64,7 @@ export default class Page {
       <h3 class="block-title">Лидеры продаж</h3>
       <div data-element="sortableTable"></div>
     `;
+
     this.setSubElements();
 
     this.renderPicker();
@@ -96,6 +89,20 @@ export default class Page {
 
   renderTable() {
     this.subElements.sortableTable.append(this.table.element);
+  }
+
+  updateCharts(from, to) {
+    this.orders.update(from, to);
+    this.customers.update(from, to);
+    this.sales.update(from, to);
+
+  }
+
+  async updateTable(from, to) {
+    this.table.url.searchParams.set('from', from.toISOString());
+    this.table.url.searchParams.set('to', to.toISOString());
+    const newData = await this.table.loadData();
+    this.table.addRows(newData);
   }
 
   initEventListeners() {
@@ -129,5 +136,13 @@ export default class Page {
       const key = sub.dataset.element;
       this.subElements[key] = sub;
     });
+  }
+
+  get currentRange() {
+    const to = new Date();
+    const from = new Date(to);
+    from.setMonth(to.getMonth() - 1);
+
+    return { from, to };
   }
 }
