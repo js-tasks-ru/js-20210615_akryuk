@@ -3,6 +3,8 @@ import SortableTable from './components/sortable-table/src/index.js';
 import ColumnChart from './components/column-chart/src/index.js';
 import header from './bestsellers-header.js';
 
+const BACKEND_URL = 'https://course-js.javascript.ru';
+
 export default class Page {
   element;
   subElements = {};
@@ -11,42 +13,42 @@ export default class Page {
 
     this.range = this.currentRange;
 
-    this.rangePicker = new RangePicker(this.range);
+    this.components = {
+      rangePicker: new RangePicker(this.range),
+      sortableTable: new SortableTable(header, {
+        url: this.tableURL,
+        isSortLocally: true,
+        start: 0,
+        end: 30
+      }),
 
-    this.orders = new ColumnChart({
-      label: 'Заказы',
-      url: '/api/dashboard/orders',
-      range: this.range
-    });
+      ordersChart: new ColumnChart({
+        label: 'Заказы',
+        url: '/api/dashboard/orders',
+        range: this.range
+      }),
 
-    this.sales = new ColumnChart({
-      label: 'Продажи',
-      formatHeading: data => `$${data}`,
-      url: '/api/dashboard/sales',
-      range: this.range
-    });
+      salesChart: new ColumnChart({
+        label: 'Продажи',
+        formatHeading: data => `$${data}`,
+        url: '/api/dashboard/sales',
+        range: this.range
+      }),
 
-    this.customers = new ColumnChart({
-      label: 'Клиенты',
-      url: '/api/dashboard/customers',
-      range: this.range
-    });
-
-    this.table = new SortableTable(header, {
-      url: `api/dashboard/bestsellers?from=${this.range.from.toISOString()}&to=${this.range.to.toISOString()}`,
-      isSortLocally: true,
-      start: 0,
-      end: 30
-    });
-
+      customersChart: new ColumnChart({
+        label: 'Клиенты',
+        url: '/api/dashboard/customers',
+        range: this.range
+      })
+    };
   }
 
-  handleDateSelect = (e) => {
-    this.range = e.detail;
+  handleDateSelect = (event) => {
+    this.range = event.detail;
     const {from, to} = this.range;
     this.updateCharts(from, to);
     this.updateTable(from, to);
-  }
+  };
 
   async render() {
     this.element = document.createElement('div');
@@ -66,43 +68,32 @@ export default class Page {
     `;
 
     this.setSubElements();
-
-    this.renderPicker();
-    this.renderCharts();
-    this.renderTable();
-
+    this.renderComponents();
     this.initEventListeners();
 
     return this.element;
   }
 
-  renderPicker() {
-    this.subElements.rangePicker.append(this.rangePicker.element);
-  }
-
-  renderCharts() {
-    const { ordersChart, salesChart, customersChart } = this.subElements;
-    ordersChart.append(this.orders.element);
-    salesChart.append(this.sales.element);
-    customersChart.append(this.customers.element);
-  }
-
-  renderTable() {
-    this.subElements.sortableTable.append(this.table.element);
+  renderComponents() {
+    for (const [key, value] of Object.entries(this.components)) {
+      const container = this.subElements[key];
+      if (container) {
+        container.append(value.element);
+      }
+    }
   }
 
   updateCharts(from, to) {
-    this.orders.update(from, to);
-    this.customers.update(from, to);
-    this.sales.update(from, to);
-
+    const {ordersChart, customersChart, salesChart} = this.components;
+    [ordersChart, customersChart, salesChart].forEach(chart => chart.update(from, to));
   }
 
   async updateTable(from, to) {
-    this.table.url.searchParams.set('from', from.toISOString());
-    this.table.url.searchParams.set('to', to.toISOString());
-    const newData = await this.table.loadData();
-    this.table.addRows(newData);
+    const {sortableTable} = this.components;
+    sortableTable.url.searchParams.set('from', from.toISOString());
+    sortableTable.url.searchParams.set('to', to.toISOString());
+    const newData = await sortableTable.loadData();
+    sortableTable.addRows(newData);
   }
 
   initEventListeners() {
@@ -123,11 +114,10 @@ export default class Page {
     this.remove();
     this.removeEventListeners();
     this.element = null;
-    this.table.destroy();
-    this.rangePicker.destroy();
-    this.sales.destroy();
-    this.customers.destroy();
-    this.orders.destroy();
+    this.subElements = {};
+    for (const component of Object.values(this.components)) {
+      component.destroy();
+    }
   }
 
   setSubElements() {
@@ -143,6 +133,14 @@ export default class Page {
     const from = new Date(to);
     from.setMonth(to.getMonth() - 1);
 
-    return { from, to };
+    return {from, to};
+  }
+
+  get tableURL() {
+    const {from, to} = this.range;
+    const url = new URL('/api/dashboard/bestsellers', BACKEND_URL);
+    url.searchParams.set('from', from.toISOString());
+    url.searchParams.set('to', to.toISOString());
+    return url.toString();
   }
 }
